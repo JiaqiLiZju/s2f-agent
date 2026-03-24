@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nucleotide Transformer"
+  short_description: "Classic NT v1/v2 inference workflows"
+  default_prompt: "Use $nucleotide-transformer to help me load a Nucleotide Transformer v1 or v2 model, tokenize DNA, or extract embeddings."

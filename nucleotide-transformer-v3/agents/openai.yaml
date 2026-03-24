@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nucleotide Transformer v3"
+  short_description: "NTv3 inference and post-training workflows"
+  default_prompt: "Use $nucleotide-transformer-v3 to help me run NTv3 pre-trained or post-trained inference with the right length and species settings."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "SegmentNT Family"
+  short_description: "SegmentNT segmentation inference workflows"
+  default_prompt: "Use $segment-nt to help me run SegmentNT, SegmentEnformer, or SegmentBorzoi inference and handle sequence-length constraints."
