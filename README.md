@@ -21,7 +21,7 @@ The repository currently includes six packaged skills:
 | `evo2-inference` | Evo 2 Inference | Evo 2 installation, checkpoint choice, forward pass, embeddings, generation, and deployment paths | `$evo2-inference` |
 | `gpn-models` | GPN Models | Choosing between GPN-family frameworks and using grounded loading / CLI workflows | `$gpn-models` |
 | `nucleotide-transformer` | Nucleotide Transformer | Classic NT v1/v2 JAX inference, tokenization, and embeddings workflows | `$nucleotide-transformer` |
-| `nucleotide-transformer-v3` | Nucleotide Transformer v3 | NTv3 pre-trained vs post-trained inference, species conditioning, and length-aware runs | `$nucleotide-transformer-v3` |
+| `nucleotide-transformer-v3` | Nucleotide Transformer v3 | NTv3 Transformers inference, species conditioning, setup troubleshooting, and length-aware runs | `$nucleotide-transformer-v3` |
 | `segment-nt` | SegmentNT Family | SegmentNT, SegmentEnformer, and SegmentBorzoi segmentation inference workflows | `$segment-nt` |
 
 There is also a `Readme/` folder with source material used to build or plan skills.
@@ -187,6 +187,7 @@ Use the deployment helper on the target machine:
 ./scripts/provision_stack.sh alphagenome
 ./scripts/provision_stack.sh gpn
 ./scripts/provision_stack.sh nt-jax
+./scripts/provision_stack.sh ntv3-hf
 ```
 
 For a one-step fresh-machine install of the default stacks:
@@ -201,11 +202,14 @@ Or, with Make:
 make bootstrap
 ```
 
-`nt-jax` is the recommended shared environment for:
+`nt-jax` is the recommended JAX environment for:
 
 - `nucleotide-transformer`
-- `nucleotide-transformer-v3`
 - `segment-nt`
+
+`ntv3-hf` is the recommended NTv3 tutorial environment for:
+
+- `nucleotide-transformer-v3`
 
 #### Evo 2 light install
 
@@ -247,7 +251,7 @@ make bootstrap-evo2-full
 
 #### Hardware-specific JAX
 
-By default, `nt-jax` installs a generic `jax>=0.3.25`. If your target machine needs a custom accelerator-specific JAX install, set `JAX_INSTALL_CMD`:
+By default, `nt-jax` installs a generic `jax>=0.3.25` before the source install. If your target machine needs a custom accelerator-specific JAX install, set `JAX_INSTALL_CMD`:
 
 ```bash
 export JAX_INSTALL_CMD='$VENV_PYTHON -m pip install jax[cuda12]'
@@ -261,6 +265,24 @@ export JAX_INSTALL_CMD='$VENV_PYTHON -m pip install jax[cuda12]'
 ./scripts/bootstrap.sh
 # or
 make bootstrap
+```
+
+Note: the upstream source install used by `nt-jax` currently requires Python 3.10+ in practice because of newer JAX constraints.
+
+#### NTv3 Transformers stack
+
+For the NTv3 tutorial path (Hugging Face Transformers + PyTorch):
+
+```bash
+./scripts/provision_stack.sh ntv3-hf
+```
+
+One-step variant:
+
+```bash
+./scripts/bootstrap.sh --with-ntv3-hf
+# or
+make bootstrap-ntv3-hf
 ```
 
 ### 3. Run a smoke test on the new machine
@@ -279,6 +301,7 @@ Optional import checks against deployed environments:
   --alphagenome-python /path/to/alphagenome/bin/python \
   --gpn-python /path/to/gpn/bin/python \
   --nt-python /path/to/nt-jax/bin/python \
+  --ntv3-python /path/to/ntv3-hf/bin/python \
   --evo2-python /path/to/evo2-light/bin/python
 ```
 
@@ -346,11 +369,13 @@ Use this skill for the classic Nucleotide Transformer v1 and v2 models, especial
 
 Use this skill for NTv3-specific workflows, especially:
 
+- using the tutorial-default Hugging Face Transformers inference path
 - choosing pre-trained vs post-trained NTv3 checkpoints
 - handling base-resolution long-context inference
 - species-conditioned post-trained runs
 - understanding the difference between full-length logits and cropped bigwig / bed outputs
-- validating legal sequence lengths and using `bfloat16` when memory is tight
+- validating legal sequence lengths and using reduced precision when memory is tight
+- troubleshooting NTv3 setup and import failures
 
 ### `segment-nt`
 
@@ -377,7 +402,7 @@ Better prompts:
 - `Use $evo2-inference to tell me whether I can run evo2_20b on my machine and give me the correct install path.`
 - `Use $gpn-models to tell me whether aligned genomes are required for this workflow and suggest the right family.`
 - `Use $nucleotide-transformer to write a minimal JAX example with 250M_multi_species_v2 and explain 6-mer tokenization.`
-- `Use $nucleotide-transformer-v3 to write a post-trained NTv3 example for human and explain the output tensors.`
+- `Use $nucleotide-transformer-v3 to write a post-trained NTv3 Transformers example for human and explain the output tensors.`
 - `Use $segment-nt to help me run SegmentNT on a 40 kb sequence and calculate the needed rescaling factor.`
 
 ## Current Scope

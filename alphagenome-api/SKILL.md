@@ -13,7 +13,9 @@ Use this skill to produce conservative AlphaGenome Python snippets and notebook 
 
 1. Confirm setup.
 - Confirm whether the user already has an AlphaGenome API key.
+- Confirm the active Python version is `>=3.10` before installing `alphagenome`.
 - Prefer a virtual environment before installing packages.
+- Keep API credentials out of code and logs; prefer `ALPHAGENOME_API_KEY` from environment variables.
 - Use the install flow in [references/quickstart.md](references/quickstart.md).
 
 2. Build the client.
@@ -23,6 +25,7 @@ Use this skill to produce conservative AlphaGenome Python snippets and notebook 
 3. Choose the prediction path.
 - Use `genome.Variant` plus `model.predict_variant(...)` when the task compares reference and alternate alleles.
 - Confirm the exact client method from the installed package or official docs before writing interval-only code, because the bundled source only demonstrates the variant path.
+- For `model.predict_variant(...)`, use a supported interval width (currently `16384`, `131072`, `524288`, or `1048576` bp), then verify this list against the installed package when needed.
 - Keep each interval at or below 1,000,000 base pairs.
 
 4. Limit the request.
@@ -56,6 +59,7 @@ Verify any other method, output enum, or helper against the installed package or
 - Explain genomic assumptions in plain language.
 - Call out when you are inferring a coordinate window, assay, or ontology term.
 - Push back on large-batch workloads that exceed the README guidance.
+- Redact secrets in examples and transcripts; never echo API keys.
 
 ## References
 

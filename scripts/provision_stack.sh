@@ -13,7 +13,8 @@ This script is intended to be run later on the target machine, not in the curren
 Stacks:
   alphagenome   AlphaGenome API software
   gpn           Song Lab GPN package
-  nt-jax        Classic NT, NTv3, and SegmentNT-family JAX stack
+  nt-jax        Classic NT + SegmentNT-family JAX stack (source install)
+  ntv3-hf       NTv3 tutorial stack (Hugging Face Transformers + PyTorch)
   evo2-light    Evo 2 light install (7B-class workflow)
   evo2-full     Evo 2 full install inside an active conda environment
 
@@ -99,9 +100,18 @@ case "$stack" in
   alphagenome)
     venv_dir="$venv_root/alphagenome"
     venv_python="$(create_venv "$python_bin" "$venv_dir")"
+    if ! "$venv_python" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)'; then
+      echo "error: alphagenome requires Python >= 3.10." >&2
+      echo "hint: rerun with --python python3.10 (or newer)." >&2
+      exit 2
+    fi
     "$venv_python" -m pip install --upgrade pip setuptools wheel
-    clone_if_missing "https://github.com/google-deepmind/alphagenome.git" "$src_root/alphagenome"
-    "$venv_python" -m pip install "$src_root/alphagenome"
+    if clone_if_missing "https://github.com/google-deepmind/alphagenome.git" "$src_root/alphagenome"; then
+      "$venv_python" -m pip install "$src_root/alphagenome"
+    else
+      echo "warn: failed to clone alphagenome from GitHub; falling back to package index install." >&2
+      "$venv_python" -m pip install alphagenome
+    fi
     echo "ready: alphagenome environment at $venv_dir"
     ;;
   gpn)
@@ -114,6 +124,11 @@ case "$stack" in
   nt-jax)
     venv_dir="$venv_root/nt-jax"
     venv_python="$(create_venv "$python_bin" "$venv_dir")"
+    if ! "$venv_python" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)'; then
+      echo "error: nt-jax source install requires Python >= 3.10 in practice (upstream JAX constraints)." >&2
+      echo "hint: rerun with --python python3.10 (or newer), or use stack ntv3-hf for NTv3 tutorial workflows." >&2
+      exit 2
+    fi
     "$venv_python" -m pip install --upgrade pip setuptools wheel
     if [[ -n "${JAX_INSTALL_CMD:-}" ]]; then
       VENV_PYTHON="$venv_python" bash -lc "$JAX_INSTALL_CMD"
@@ -123,6 +138,18 @@ case "$stack" in
     clone_if_missing "https://github.com/instadeepai/nucleotide-transformer.git" "$src_root/nucleotide-transformer"
     "$venv_python" -m pip install "$src_root/nucleotide-transformer"
     echo "ready: nt-jax environment at $venv_dir"
+    ;;
+  ntv3-hf)
+    venv_dir="$venv_root/ntv3-hf"
+    venv_python="$(create_venv "$python_bin" "$venv_dir")"
+    "$venv_python" -m pip install --upgrade pip setuptools wheel
+    "$venv_python" -m pip install \
+      "transformers>=4.55,<5" \
+      "huggingface_hub>=0.23,<1" \
+      safetensors \
+      torch \
+      "numpy<2"
+    echo "ready: ntv3-hf environment at $venv_dir"
     ;;
   evo2-light)
     if [[ -z "${TORCH_INSTALL_CMD:-}" ]]; then

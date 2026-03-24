@@ -22,7 +22,8 @@ Options:
   --skills-dir DIR         Check linked/copied skills in this Codex skills directory.
   --alphagenome-python P   Run AlphaGenome import checks with this Python executable.
   --gpn-python P           Run GPN import checks with this Python executable.
-  --nt-python P            Run NT / NTv3 / SegmentNT import checks with this Python executable.
+  --nt-python P            Run classic NT / SegmentNT JAX import checks with this Python executable.
+  --ntv3-python P          Run NTv3 Transformers import checks with this Python executable.
   --evo2-python P          Run Evo 2 import checks with this Python executable.
   -h, --help               Show this help message.
 EOF
@@ -32,6 +33,7 @@ skills_dir=""
 alphagenome_python=""
 gpn_python=""
 nt_python=""
+ntv3_python=""
 evo2_python=""
 
 while [[ $# -gt 0 ]]; do
@@ -50,6 +52,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --nt-python)
       nt_python="$2"
+      shift 2
+      ;;
+    --ntv3-python)
+      ntv3_python="$2"
       shift 2
       ;;
     --evo2-python)
@@ -105,6 +111,7 @@ check_exists "$REPO_ROOT/scripts/bootstrap.sh" "bootstrap.sh"
 check_exists "$REPO_ROOT/scripts/provision_stack.sh" "provision_stack.sh"
 check_exists "$REPO_ROOT/scripts/smoke_test.sh" "smoke_test.sh"
 check_exists "$REPO_ROOT/nucleotide-transformer-v3/scripts/check_valid_length.py" "NTv3 helper script"
+check_exists "$REPO_ROOT/nucleotide-transformer-v3/scripts/run_track_prediction.py" "NTv3 track prediction script"
 check_exists "$REPO_ROOT/segment-nt/scripts/compute_rescaling_factor.py" "SegmentNT helper script"
 
 for skill in "${SKILL_IDS[@]}"; do
@@ -127,9 +134,14 @@ run_import_check \
   'import gpn.model; import gpn.star.model; from transformers import AutoModel; from transformers import AutoModelForMaskedLM'
 
 run_import_check \
-  "nt-stack" \
+  "nt-jax-stack" \
   "$nt_python" \
-  'from nucleotide_transformer.pretrained import get_pretrained_model, get_pretrained_segment_nt_model; from nucleotide_transformer_v3.pretrained import get_pretrained_ntv3_model, get_posttrained_ntv3_model'
+  'from nucleotide_transformer.pretrained import get_pretrained_model, get_pretrained_segment_nt_model'
+
+run_import_check \
+  "ntv3-transformers" \
+  "$ntv3_python" \
+  'from transformers import AutoModel, AutoModelForMaskedLM, AutoTokenizer; import huggingface_hub; import torch'
 
 run_import_check \
   "evo2" \

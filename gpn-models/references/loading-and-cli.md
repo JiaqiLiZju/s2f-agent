@@ -18,6 +18,19 @@ cd gpn
 pip install -e .
 ```
 
+Practical compatibility note (observed in real runs):
+
+```bash
+# Avoid NumPy 2.x ABI issues with torch-dependent GPN flows
+pip install "numpy<2"
+```
+
+If Hugging Face downloads fail with Xet range/reconstruction errors, retry with:
+
+```bash
+HF_HUB_DISABLE_XET=1 python your_script.py
+```
+
 ## Load `GPN`
 
 ```python
@@ -106,3 +119,22 @@ torchrun --nproc_per_node=$(echo $CUDA_VISIBLE_DEVICES | awk -F',' '{print NF}')
 ```
 
 Keep these CLI patterns scoped to the single-sequence `GPN` path unless a separate grounded command is available for the other families.
+
+## Single-site `predict_variant` example script
+
+For one-off single-site scoring (without preparing a variants parquet), use:
+
+```bash
+python references/predict_variant_single_site.py \
+    --genome hg38 \
+    --chrom chr12 \
+    --pos 1000000 \
+    --model-id songlab/gpn-msa-sapiens \
+    --alt-rule to_G_unless_ref_G_then_T \
+    --output-json tmp/hg38/gpn_predict_variant_chr12_1000000.json
+```
+
+This script reports:
+- `llr_fwd`
+- `llr_rev`
+- `llr_mean` (strand-averaged)

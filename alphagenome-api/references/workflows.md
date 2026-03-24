@@ -8,11 +8,13 @@ Follow this order:
 
 1. Create the client.
 2. Define a `genome.Interval` that covers the locus of interest.
+   - For `predict_variant(...)`, use a supported width (currently `16384`, `131072`, `524288`, or `1048576` bp).
 3. Define a `genome.Variant` when the task is about allelic effects.
 4. Ask for the narrowest set of outputs that answers the question.
 5. Add `ontology_terms` only when the modality depends on anatomical or tissue context.
 
 Keep the code small until the first successful prediction returns.
+Keep API keys in environment variables, and do not print them in logs or notebook outputs.
 
 ## Choose the analysis style
 

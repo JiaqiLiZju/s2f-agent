@@ -36,6 +36,12 @@ Use this skill to keep GPN-family responses aligned with the repo README. Start 
 - Present the documented Snakemake dataset workflow and `torchrun` commands when the user asks for training on their own data.
 - Do not fabricate GPN-MSA or GPN-Star training commands beyond what the README links to.
 
+6. For single-site `predict_variant` requests, use an explicit scoring workflow.
+- Validate the reference base at the requested coordinate from the target genome sequence source before constructing `ref>alt`.
+- For single-sequence `GPN` scoring, use a fixed window centered on the variant, mask the center token, and compute `LLR = logit(alt) - logit(ref)`.
+- Report forward, reverse-complement, and mean score when both strands are evaluated.
+- Do not route single-site requests to `GPN-MSA` or `GPN-Star` unless aligned inputs and species metadata are actually available.
+
 ## Grounded API Surface
 
 Treat the following patterns as grounded by the bundled README:
@@ -57,6 +63,12 @@ Treat the following patterns as grounded by the bundled README:
 
 Verify any additional tokenizer API, preprocessing helper, or scoring function against the installed package or linked notebooks before using it.
 
+## Execution Notes
+
+- Prefer `numpy<2` when `torch`/ABI errors appear in real environments.
+- If Hugging Face model downloads fail with Xet range errors, retry with `HF_HUB_DISABLE_XET=1`.
+- Treat `gpn.ss.run_vep` defaults (`fp16`, `torch_compile`) as hardware-sensitive. For CPU-only contexts, consider a custom inference path without forced mixed precision/compile.
+
 ## Response Style
 
 - Prefer a family-selection recommendation before giving code.
@@ -69,3 +81,4 @@ Verify any additional tokenizer API, preprocessing helper, or scoring function a
 - Read [references/framework-selection.md](references/framework-selection.md) to choose between GPN, GPN-MSA, PhyloGPN, and GPN-Star.
 - Read [references/loading-and-cli.md](references/loading-and-cli.md) for installation, model loading, and grounded `gpn.ss` commands.
 - Read [references/caveats.md](references/caveats.md) for deprecation notes, alignment boundaries, and support links.
+- Use [references/predict_variant_single_site.py](references/predict_variant_single_site.py) for reproducible one-site `predict_variant` scoring with forward/reverse LLR outputs.

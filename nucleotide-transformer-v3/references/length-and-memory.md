@@ -6,23 +6,23 @@ Use this file when the request depends on sequence geometry or memory pressure.
 
 NTv3 uses a U-Net-like architecture with downsampling and upsampling, so sequence length must be divisible by `2^num_downsamples`.
 
-Grounded rules from the docs:
+Grounded rules:
 
 - 7 downsample models: length divisible by `128`
 - 5 downsample models: length divisible by `32`
 
-## Padding and cropping
+## Tokenization and sequence handling
 
-- Crop to the nearest valid length when exact endpoints are not critical.
+- In the HF tutorial path, use `pad_to_multiple_of=128` for batched tokenization.
+- Crop to nearest valid length when exact endpoints are not critical.
 - If padding is necessary, pad with `N` tokens.
-- Do not recommend `[PAD]` tokens, because the models were not trained on them.
+- Do not recommend `[PAD]` tokens for biological sequence padding.
 
-## Memory
+## Memory and dtype
 
-Both `get_pretrained_ntv3_model()` and `get_posttrained_ntv3_model()` support:
-
-```python
-use_bfloat16=True
-```
-
-Use this when the user needs lower memory usage and accepts minor numerical differences.
+- GPU inference can use reduced precision to cut memory usage.
+- Typical setup from the tutorial:
+  - `torch.bfloat16` on Ampere+ GPUs (`compute capability >= 8`)
+  - `torch.float16` on older CUDA GPUs
+  - `torch.float32` on CPU
+- Legacy JAX helper path supports `use_bfloat16=True` when available.

@@ -25,6 +25,7 @@ Options:
   --force-links          Replace existing paths in the skills directory.
   --with-evo2-light      Also provision evo2-light and include it in smoke tests.
   --with-evo2-full       Also provision evo2-full in the currently active conda env.
+  --with-ntv3-hf         Also provision ntv3-hf and include it in smoke tests.
   --skip-link            Skip linking/copying skills.
   --skip-smoke           Skip the final smoke test.
   -h, --help             Show this help message.
@@ -42,6 +43,7 @@ copy_skills=0
 force_links=0
 with_evo2_light=0
 with_evo2_full=0
+with_ntv3_hf=0
 skip_link=0
 skip_smoke=0
 
@@ -73,6 +75,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --with-evo2-full)
       with_evo2_full=1
+      shift
+      ;;
+    --with-ntv3-hf)
+      with_ntv3_hf=1
       shift
       ;;
     --skip-link)
@@ -132,11 +138,22 @@ if [[ "$with_evo2_full" -eq 1 ]]; then
   evo2_python="python"
 fi
 
+ntv3_python=""
+if [[ "$with_ntv3_hf" -eq 1 ]]; then
+  bash "$REPO_ROOT/scripts/provision_stack.sh" ntv3-hf \
+    --deploy-root "$deploy_root" \
+    --python "$python_bin"
+  ntv3_python="$deploy_root/venvs/ntv3-hf/bin/python"
+fi
+
 if [[ "$skip_smoke" -ne 1 ]]; then
   smoke_args=(--skills-dir "$skills_dir")
   smoke_args+=(--alphagenome-python "$deploy_root/venvs/alphagenome/bin/python")
   smoke_args+=(--gpn-python "$deploy_root/venvs/gpn/bin/python")
   smoke_args+=(--nt-python "$deploy_root/venvs/nt-jax/bin/python")
+  if [[ -n "$ntv3_python" ]]; then
+    smoke_args+=(--ntv3-python "$ntv3_python")
+  fi
   if [[ -n "$evo2_python" ]]; then
     smoke_args+=(--evo2-python "$evo2_python")
   fi
