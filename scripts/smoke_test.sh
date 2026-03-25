@@ -4,6 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL_IDS=(
   "alphagenome-api"
+  "basset-workflows"
   "bpnet"
   "borzoi-workflows"
   "dnabert2"

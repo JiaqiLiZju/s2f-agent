@@ -16,6 +16,11 @@ Use this skill for legacy Basset workflows in the Torch7 codebase. Keep setup as
 - Use Basset when the user explicitly needs Basset scripts, existing `.th` models, or a legacy Torch7 pipeline.
 
 2. Validate environment before writing long command sequences.
+- Run a hard preflight check first and stop immediately if any item is missing:
+  - `th` (Torch7 entry point)
+  - `python2` (legacy Basset Python scripts are Python2-oriented)
+  - `bedtools` and `samtools`
+  - a usable `.th` model file for `basset_predict.lua` / `basset_test.lua`
 - Require Torch7 and key Lua packages.
 - Require Python dependencies plus `bedtools` and `samtools` for preprocessing/data prep.
 - Require `BASSETDIR`, `PATH`, `PYTHONPATH`, and `LUA_PATH` exports for command discovery.
@@ -38,6 +43,7 @@ Use this skill for legacy Basset workflows in the Torch7 codebase. Keep setup as
 
 6. Validate input schemas before execution.
 - Confirm BED/table/HDF5 conventions expected by Basset.
+- For prediction flows, confirm `test_in` exists in HDF5 if not using FASTA input.
 - Confirm VCF plus genome FASTA availability for SNP workflows.
 
 ## Grounded Command Surface
@@ -79,6 +85,7 @@ Do not invent non-documented Basset wrappers, alternate training entry points, o
 - Recommend Basenji for new projects unless the user explicitly requests legacy Basset.
 - Prefer short, runnable command chains over architecture summaries.
 - Surface file-format assumptions before training or SNP analysis commands.
+- When preflight fails, report exact missing dependencies and provide the smallest next-step install commands before proposing downstream Basset commands.
 
 ## References
 

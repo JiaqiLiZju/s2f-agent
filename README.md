@@ -47,11 +47,12 @@ Use $nucleotide-transformer-v3 to write a species-conditioned NTv3 inference exa
 
 ## What This Repository Contains
 
-The repository currently includes nine packaged skills:
+The repository currently includes ten packaged skills:
 
 | Skill ID | Display name | Best for | Explicit invocation | Details |
 | --- | --- | --- | --- | --- |
 | `alphagenome-api` | AlphaGenome API | AlphaGenome setup, variant prediction, plotting, and troubleshooting | `$alphagenome-api` | [`SKILL.md`](./alphagenome-api/SKILL.md) |
+| `basset-workflows` | Basset Workflows | Legacy Basset Torch7 preprocessing, prediction, interpretation, and SAD workflows | `$basset-workflows` | [`SKILL.md`](./basset-workflows/SKILL.md) |
 | `bpnet` | BPNet Workflows | BPNet setup, preprocessing, train/predict/SHAP workflows, and motif discovery integration | `$bpnet` | [`SKILL.md`](./bpnet/SKILL.md) |
 | `borzoi-workflows` | Borzoi Workflows | Calico Borzoi setup, tutorial execution, model download, variant scoring, and interpretation workflows | `$borzoi-workflows` | [`SKILL.md`](./borzoi-workflows/SKILL.md) |
 | `dnabert2` | DNABERT-2 | DNABERT2 embeddings, GUE evaluation, CSV validation, and custom fine-tuning workflows | `$dnabert2` | [`SKILL.md`](./dnabert2/SKILL.md) |
@@ -81,6 +82,10 @@ s2f-skills/
 │   ├── nucleotide_transformer_v3.md
 │   └── segment_nt.md
 ├── alphagenome-api/
+│   ├── SKILL.md
+│   ├── agents/openai.yaml
+│   └── references/
+├── basset-workflows/
 │   ├── SKILL.md
 │   ├── agents/openai.yaml
 │   └── references/
@@ -136,7 +141,7 @@ For example:
 
 ```bash
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-cp -R alphagenome-api bpnet borzoi-workflows dnabert2 evo2-inference gpn-models nucleotide-transformer nucleotide-transformer-v3 segment-nt "${CODEX_HOME:-$HOME/.codex}/skills/"
+cp -R alphagenome-api basset-workflows bpnet borzoi-workflows dnabert2 evo2-inference gpn-models nucleotide-transformer nucleotide-transformer-v3 segment-nt "${CODEX_HOME:-$HOME/.codex}/skills/"
 ```
 
 If you prefer to keep the canonical copies in this repo, you can also symlink them into your Codex skills directory.
@@ -148,6 +153,7 @@ Each skill has a `SKILL.md` file with frontmatter that describes when the skill 
 Examples:
 
 - Asking for AlphaGenome variant prediction help may trigger `alphagenome-api`
+- Asking for legacy Basset preprocessing/prediction or SAD analysis may trigger `basset-workflows`
 - Asking how to run BPNet training, prediction, SHAP, or input-data setup may trigger `bpnet`
 - Asking how to run Borzoi tutorials or score variants with Borzoi may trigger `borzoi-workflows`
 - Asking how to run DNABERT2 embeddings or fine-tune DNABERT2 on CSV datasets may trigger `dnabert2`
@@ -241,7 +247,7 @@ Useful variants:
 ```bash
 ./scripts/link_skills.sh --list
 ./scripts/link_skills.sh --skills-dir /opt/codex/skills --force
-./scripts/link_skills.sh bpnet dnabert2 nucleotide-transformer nucleotide-transformer-v3 segment-nt borzoi-workflows
+./scripts/link_skills.sh basset-workflows bpnet dnabert2 nucleotide-transformer nucleotide-transformer-v3 segment-nt borzoi-workflows
 ```
 
 ### 2. Provision the software stack you need
@@ -441,6 +447,7 @@ Use this section to jump directly to each skill's detailed instructions and supp
 | Skill | Primary use | Docs |
 | --- | --- | --- |
 | `alphagenome-api` | AlphaGenome API setup, prediction, and plotting workflows | [`SKILL.md`](./alphagenome-api/SKILL.md) · [`references/`](./alphagenome-api/references/) |
+| `basset-workflows` | Legacy Basset Torch7 preprocessing, prediction, and interpretation workflows | [`SKILL.md`](./basset-workflows/SKILL.md) · [`references/`](./basset-workflows/references/) |
 | `bpnet` | BPNet setup, preprocessing, train/predict/SHAP, and motif/hit-calling integration | [`SKILL.md`](./bpnet/SKILL.md) · [`references/`](./bpnet/references/) |
 | `borzoi-workflows` | Borzoi setup, data/train tutorials, variant scoring, and interpretation workflows | [`SKILL.md`](./borzoi-workflows/SKILL.md) · [`references/`](./borzoi-workflows/references/) |
 | `dnabert2` | DNABERT2 embeddings, GUE evaluation, and custom fine-tuning workflows | [`SKILL.md`](./dnabert2/SKILL.md) · [`references/`](./dnabert2/references/) |
@@ -470,10 +477,11 @@ Better prompts:
 - `Use $nucleotide-transformer-v3 to write a post-trained NTv3 Transformers example for human and explain the output tensors.`
 - `Use $segment-nt to help me run SegmentNT on a 40 kb sequence and calculate the needed rescaling factor.`
 - `Use $borzoi-workflows to set up Borzoi and run latest tutorial variant scoring scripts on a small VCF.`
+- `Use $basset-workflows to validate my Torch7/Basset environment and run a conservative basset_predict.lua workflow.`
 
 ## Current Scope
 
-This repository currently ships the nine skills listed above.
+This repository currently ships the ten skills listed above.
 
 `Readme/CHM13_README.md` exists as source material, but a packaged CHM13 skill has not been added yet.
 
