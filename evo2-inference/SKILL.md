@@ -15,16 +15,21 @@ Use this skill to produce conservative Evo 2 setup instructions and runnable Pyt
 - Use local inference when the user has supported Linux or WSL2, CUDA, and NVIDIA GPUs.
 - Use Nvidia hosted API when the user wants generation without local installation.
 - Use Nvidia NIM when the user wants a self-hosted service endpoint.
+- For hosted API work, assume endpoint health can change during a run; prefer retry and fallback plans.
 
 2. Choose the checkpoint that matches the hardware.
 - Prefer `evo2_7b` for the lightest widely usable local path.
 - Treat `evo2_20b`, `evo2_40b`, and `evo2_1b_base` as FP8-dependent models that require Transformer Engine and Hopper GPUs.
 - Treat `evo2_40b` as a multi-GPU workload that needs multiple H100 GPUs.
+- For hosted API forward and embedding extraction, prefer `evo2-7b` first.
+- For hosted API generation, try `evo2-7b` first and fall back to `evo2-40b` if needed.
 
 3. Choose the task mode.
 - Use a forward pass when the user wants logits or sequence likelihood style scoring.
 - Use embeddings when the user wants downstream representations or classifiers.
 - Use generation when the user wants sequence completion or design from prompts.
+- For variant-effect requests, use a REF-vs-ALT proxy from forward and embedding deltas.
+- State clearly that Evo2 does not expose an AlphaGenome-style `predict_variant(...)` endpoint in this skill.
 
 4. Validate the environment before going deep.
 - Confirm Python 3.11 or 3.12.
@@ -48,13 +53,21 @@ Treat the following names and patterns as grounded by the bundled README:
 - `evo2_model.generate(...)`
 - `python -m evo2.test.test_evo2_generation --model_name evo2_7b`
 
-Verify any additional helper, tokenizer behavior, or advanced inference option against the installed package or official docs before relying on it.
+Treat the following hosted API patterns as grounded by this skill's references and examples:
+
+- `POST /v1/biology/arc/evo2-7b/forward` with `{"sequence": ..., "output_layers": [...]}`
+- `POST /v1/biology/arc/evo2-7b/generate` with `{"sequence": ..., "num_tokens": ..., "top_k": ...}`
+- `POST /v1/biology/arc/evo2-40b/generate` as generation fallback
+- Forward outputs can arrive as base64-encoded ZIP payloads containing `.npy` arrays.
+
+Verify any additional helper, tokenizer behavior, or advanced inference option against installed packages or official docs before relying on it.
 
 ## Response Style
 
 - Prefer a hardware-aware recommendation before giving install commands.
 - State clearly when a request is incompatible with the user's platform.
 - Call out when a model choice implies FP8, Transformer Engine, Hopper GPUs, or multiple GPUs.
+- Explicitly label REF-vs-ALT scores as a variant-effect proxy when using Evo2.
 - Keep training and finetuning guidance high level unless a grounded source is available.
 
 ## References
@@ -62,3 +75,4 @@ Verify any additional helper, tokenizer behavior, or advanced inference option a
 - Read [references/setup-matrix.md](references/setup-matrix.md) for system requirements and checkpoint compatibility.
 - Read [references/usage-patterns.md](references/usage-patterns.md) for local forward, embeddings, generation, and hosted API code patterns.
 - Read [references/deployment-caveats.md](references/deployment-caveats.md) for Docker, NIM, long-sequence caveats, and troubleshooting.
+- See [scripts/run_hosted_api.py](scripts/run_hosted_api.py) and [scripts/run_real_evo2_workflow.py](scripts/run_real_evo2_workflow.py) for practical hosted workflows.

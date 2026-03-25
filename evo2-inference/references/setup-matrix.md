@@ -28,11 +28,37 @@ Use this table when recommending a model:
 | `evo2_1b_base` | 8K | Requires FP8 and Transformer Engine |
 | `evo2_7b_microviridae` | not stated in README table | Fine-tuned Microviridae model |
 
+## Hosted API operational matrix
+
+Use this matrix for hosted workflows:
+
+| Task | Primary endpoint | Fallback endpoint | Notes |
+| --- | --- | --- | --- |
+| Forward logits | `/v1/biology/arc/evo2-7b/forward` | none in this skill | `forward` returns encoded array payloads; decode before plotting. |
+| Embeddings | `/v1/biology/arc/evo2-7b/forward` with `output_layers=["embedding_layer"]` | none in this skill | Extract per-position embedding tracks from decoded arrays. |
+| Generation | `/v1/biology/arc/evo2-7b/generate` | `/v1/biology/arc/evo2-40b/generate` | Retry and fallback when 7B generation is temporarily degraded. |
+
+Common hosted API transient failures:
+
+- `400 ... DEGRADED function cannot be invoked`
+- `422 ... Instance is restarting`
+- `504` timeouts on large requests
+
+Use short retries with backoff before failing a run.
+
 ## FP8 and hardware rules
 
 - `evo2_7b`, `evo2_7b_262k`, and `evo2_7b_base` do not require Transformer Engine.
 - `evo2_20b`, `evo2_40b`, `evo2_40b_base`, and `evo2_1b_base` require FP8 via Transformer Engine and a Hopper GPU.
 - `evo2_40b` requires multiple H100 GPUs. Vortex handles device placement across available CUDA devices.
+
+## Hosted forward payload shape
+
+- Hosted `forward` commonly returns a base64 string.
+- Decoded payload is a ZIP archive containing one or more `.npy` arrays.
+- Typical layer names used in this skill:
+  - `unembed` for logits-style tracks
+  - `embedding_layer` for representation tracks
 
 ## Installation choices
 

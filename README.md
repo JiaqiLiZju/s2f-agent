@@ -11,18 +11,49 @@ This repo packages reusable skills that help Codex work with:
 
 The goal is to give Codex grounded, task-specific guidance instead of relying on generic model knowledge alone.
 
+## Quick Start
+
+For a fresh machine, the fastest path is:
+
+```bash
+./scripts/link_skills.sh
+./scripts/provision_stack.sh nt-jax
+./scripts/provision_stack.sh ntv3-hf
+./scripts/smoke_test.sh --skills-dir "${CODEX_HOME:-$HOME/.codex}/skills"
+```
+
+Then invoke a skill explicitly in Codex when you want deterministic behavior:
+
+```text
+Use $nucleotide-transformer-v3 to write a species-conditioned NTv3 inference example.
+```
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [What This Repository Contains](#what-this-repository-contains)
+- [Repository Layout](#repository-layout)
+- [How to Use These Skills](#how-to-use-these-skills)
+- [How Skills and Agents Work in This Repo](#how-skills-and-agents-work-in-this-repo)
+- [Fresh-Machine Deployment](#fresh-machine-deployment)
+- [Skill Guide](#skill-guide)
+- [Recommended Prompting Pattern](#recommended-prompting-pattern)
+- [Current Scope](#current-scope)
+- [For Maintainers](#for-maintainers)
+- [Star 记录](#star-记录)
+
 ## What This Repository Contains
 
 The repository currently includes six packaged skills:
 
-| Skill ID | Display name | Best for | Explicit invocation |
-| --- | --- | --- | --- |
-| `alphagenome-api` | AlphaGenome API | AlphaGenome setup, variant prediction, plotting, and troubleshooting | `$alphagenome-api` |
-| `evo2-inference` | Evo 2 Inference | Evo 2 installation, checkpoint choice, forward pass, embeddings, generation, and deployment paths | `$evo2-inference` |
-| `gpn-models` | GPN Models | Choosing between GPN-family frameworks and using grounded loading / CLI workflows | `$gpn-models` |
-| `nucleotide-transformer` | Nucleotide Transformer | Classic NT v1/v2 JAX inference, tokenization, and embeddings workflows | `$nucleotide-transformer` |
-| `nucleotide-transformer-v3` | Nucleotide Transformer v3 | NTv3 Transformers inference, species conditioning, setup troubleshooting, and length-aware runs | `$nucleotide-transformer-v3` |
-| `segment-nt` | SegmentNT Family | SegmentNT, SegmentEnformer, and SegmentBorzoi segmentation inference workflows | `$segment-nt` |
+| Skill ID | Display name | Best for | Explicit invocation | Details |
+| --- | --- | --- | --- | --- |
+| `alphagenome-api` | AlphaGenome API | AlphaGenome setup, variant prediction, plotting, and troubleshooting | `$alphagenome-api` | [`SKILL.md`](./alphagenome-api/SKILL.md) |
+| `evo2-inference` | Evo 2 Inference | Evo 2 installation, checkpoint choice, forward pass, embeddings, generation, and deployment paths | `$evo2-inference` | [`SKILL.md`](./evo2-inference/SKILL.md) |
+| `gpn-models` | GPN Models | Choosing between GPN-family frameworks and using grounded loading / CLI workflows | `$gpn-models` | [`SKILL.md`](./gpn-models/SKILL.md) |
+| `nucleotide-transformer` | Nucleotide Transformer | Classic NT v1/v2 JAX inference, tokenization, and embeddings workflows | `$nucleotide-transformer` | [`SKILL.md`](./nucleotide-transformer/SKILL.md) |
+| `nucleotide-transformer-v3` | Nucleotide Transformer v3 | NTv3 Transformers inference, species conditioning, setup troubleshooting, and length-aware runs | `$nucleotide-transformer-v3` | [`SKILL.md`](./nucleotide-transformer-v3/SKILL.md) |
+| `segment-nt` | SegmentNT Family | SegmentNT, SegmentEnformer, and SegmentBorzoi segmentation inference workflows | `$segment-nt` | [`SKILL.md`](./segment-nt/SKILL.md) |
 
 There is also a `Readme/` folder with source material used to build or plan skills.
 
@@ -47,6 +78,7 @@ s2f-skills/
 ├── evo2-inference/
 │   ├── SKILL.md
 │   ├── agents/openai.yaml
+│   ├── scripts/
 │   └── references/
 ├── gpn-models/
 │   ├── SKILL.md
@@ -68,7 +100,7 @@ s2f-skills/
     └── references/
 ```
 
-## How To Use These Skills
+## How to Use These Skills
 
 ### 1. Install the skills where Codex can discover them
 
@@ -122,7 +154,7 @@ Use $gpn-models to help me choose between GPN-Star and PhyloGPN for a new varian
 Use $nucleotide-transformer-v3 to tell me whether my 32768 bp input is valid and write a species-conditioned NTv3 example.
 ```
 
-## How Skills And Agents Work In This Repo
+## How Skills and Agents Work in This Repo
 
 Each packaged skill has three important parts:
 
@@ -154,6 +186,8 @@ Current examples:
 
 - `nucleotide-transformer-v3/scripts/check_valid_length.py`
 - `segment-nt/scripts/compute_rescaling_factor.py`
+- `evo2-inference/scripts/run_hosted_api.py`
+- `evo2-inference/scripts/run_real_evo2_workflow.py`
 
 ## Fresh-Machine Deployment
 
@@ -249,6 +283,28 @@ conda activate evo2-full
 make bootstrap-evo2-full
 ```
 
+#### Evo 2 hosted API (recommended for macOS / no NVIDIA GPU)
+
+If the machine does not satisfy local CUDA requirements, use hosted API:
+
+```bash
+export NVCF_RUN_KEY='your_run_key'
+python evo2-inference/scripts/run_hosted_api.py --num-tokens 8 --top-k 1
+```
+
+For a full reproducible hosted workflow with plots (interval forward/embedding/generation + variant-effect proxy):
+
+```bash
+export NVCF_RUN_KEY='your_run_key'
+python evo2-inference/scripts/run_real_evo2_workflow.py --output-dir evo2-inference/results
+```
+
+Hosted operational notes reflected in this repo:
+
+- forward/embedding tracks: prefer `evo2-7b/forward`
+- generation: try `evo2-7b/generate`, fallback to `evo2-40b/generate` when degraded
+- Evo2 does not provide AlphaGenome-style `predict_variant(...)` here; use REF-vs-ALT delta as variant-effect proxy and label it clearly
+
 #### Hardware-specific JAX
 
 By default, `nt-jax` installs a generic `jax>=0.3.25` before the source install. If your target machine needs a custom accelerator-specific JAX install, set `JAX_INSTALL_CMD`:
@@ -319,73 +375,16 @@ Important: `agents/openai.yaml` does not replace `SKILL.md`. It improves discove
 
 ## Skill Guide
 
-### `alphagenome-api`
+Use this section to jump directly to each skill's detailed instructions and supporting references.
 
-Use this skill for AlphaGenome Python API workflows, especially:
-
-- API key setup
-- package installation
-- interval and variant prediction setup
-- output selection and ontology-term usage
-- plotting reference vs alternate predictions
-
-This skill is intentionally conservative: it prefers grounded AlphaGenome patterns from the local source material and warns against inventing unsupported API calls.
-
-### `evo2-inference`
-
-Use this skill for Evo 2 inference and environment decisions, especially:
-
-- choosing between local inference, Nvidia hosted API, and NIM
-- matching checkpoints to hardware
-- running forward-pass, embeddings, and generation workflows
-- handling FP8 / Transformer Engine / Hopper GPU constraints
-
-This skill is designed to keep hardware assumptions explicit before Codex emits install commands or model code.
-
-### `gpn-models`
-
-Use this skill when the user says "GPN" but the actual model family is still ambiguous.
-
-It helps Codex:
-
-- choose between `GPN`, `GPN-MSA`, `PhyloGPN`, and `GPN-Star`
-- explain when alignments are required
-- load grounded Hugging Face checkpoints
-- use the documented single-sequence `GPN` CLI workflows for training, embeddings, and variant effect prediction
-
-It also warns that `GPN-MSA` is deprecated in favor of `GPN-Star` for new alignment-based workflows.
-
-### `nucleotide-transformer`
-
-Use this skill for the classic Nucleotide Transformer v1 and v2 models, especially:
-
-- choosing between v1 and v2 checkpoints
-- grounded JAX + Haiku inference
-- 6-mer tokenization behavior
-- embeddings extraction with `embeddings_layers_to_save`
-- context-limit troubleshooting when `N` bases appear
-
-### `nucleotide-transformer-v3`
-
-Use this skill for NTv3-specific workflows, especially:
-
-- using the tutorial-default Hugging Face Transformers inference path
-- choosing pre-trained vs post-trained NTv3 checkpoints
-- handling base-resolution long-context inference
-- species-conditioned post-trained runs
-- understanding the difference between full-length logits and cropped bigwig / bed outputs
-- validating legal sequence lengths and using reduced precision when memory is tight
-- troubleshooting NTv3 setup and import failures
-
-### `segment-nt`
-
-Use this skill for segmentation-model workflows, especially:
-
-- selecting between SegmentNT, SegmentEnformer, and SegmentBorzoi
-- running JAX inference for nucleotide-resolution annotation
-- handling SegmentNT-specific constraints such as no `N` in the input
-- computing or explaining `rescaling_factor` for longer SegmentNT inputs
-- converting logits into per-feature probabilities
+| Skill | Primary use | Docs |
+| --- | --- | --- |
+| `alphagenome-api` | AlphaGenome API setup, prediction, and plotting workflows | [`SKILL.md`](./alphagenome-api/SKILL.md) · [`references/`](./alphagenome-api/references/) |
+| `evo2-inference` | Evo 2 install/inference paths and hardware-aware setup | [`SKILL.md`](./evo2-inference/SKILL.md) · [`references/`](./evo2-inference/references/) |
+| `gpn-models` | GPN-family selection, alignment requirements, and checkpoint usage | [`SKILL.md`](./gpn-models/SKILL.md) · [`references/`](./gpn-models/references/) |
+| `nucleotide-transformer` | Classic NT v1/v2 JAX workflows and tokenization behavior | [`SKILL.md`](./nucleotide-transformer/SKILL.md) · [`references/`](./nucleotide-transformer/references/) |
+| `nucleotide-transformer-v3` | NTv3 Transformers workflows, species conditioning, and length rules | [`SKILL.md`](./nucleotide-transformer-v3/SKILL.md) · [`references/`](./nucleotide-transformer-v3/references/) |
+| `segment-nt` | SegmentNT-family segmentation inference and rescaling guidance | [`SKILL.md`](./segment-nt/SKILL.md) · [`references/`](./segment-nt/references/) |
 
 ## Recommended Prompting Pattern
 

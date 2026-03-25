@@ -1,0 +1,33 @@
+{
+  "interval_forward_embeddings_generation": {
+    "model": "evo2-7b",
+    "assembly": "hg38",
+    "chrom": "19",
+    "start_0based": 6700000,
+    "end_0based": 6732768,
+    "sequence_length": 32768,
+    "generation_prompt_length": 512,
+    "forward_track_mean": 1.760233759880066,
+    "forward_track_std": 1.2158751161086145,
+    "embedding_track_mean": 0.5556372146174944,
+    "embedding_track_std": 0.03853805913619433,
+    "generation_sequence": "ACAGTCAGACAGACAGACGGTCAGACAGACAGACGGTCAGACAGACAGACGGTCAGACAGACAG",
+    "generation_model_used": "evo2-40b",
+    "generation_sampled_probs_mean": 0.6821882165968418,
+    "plot_path": "evo2-inference/results/evo2_chr19_forward_embedding_generation.png"
+  },
+  "variant_effect_proxy": {
+    "model": "evo2-7b",
+    "assembly": "hg38",
+    "chrom": "12",
+    "position_1based": 1000000,
+    "reference_base": "T",
+    "alternate_base": "G",
+    "window_start_1based": 998977,
+    "window_end_1based": 1001024,
+    "window_len": 2048,
+    "delta_top1_at_variant": -0.142578125,
+    "delta_emb_norm_at_variant": 0.8683944513332645,
+    "plot_path": "evo2-inference/results/evo2_chr12_variant_effect.png"
+  }
+}
