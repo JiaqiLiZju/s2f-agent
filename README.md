@@ -5,6 +5,8 @@ An English-language Codex skills repository for genomics and genome-model workfl
 This repo packages reusable skills that help Codex work with:
 
 - AlphaGenome API workflows
+- Borzoi repository workflows (setup, training, variant scoring, interpretation)
+- DNABERT-2 inference and fine-tuning workflows
 - Evo 2 installation and inference
 - The GPN model family (`GPN`, `GPN-MSA`, `PhyloGPN`, `GPN-Star`)
 - The Nucleotide Transformer ecosystem, including classic NT, NTv3, and SegmentNT-family models
@@ -44,11 +46,13 @@ Use $nucleotide-transformer-v3 to write a species-conditioned NTv3 inference exa
 
 ## What This Repository Contains
 
-The repository currently includes six packaged skills:
+The repository currently includes eight packaged skills:
 
 | Skill ID | Display name | Best for | Explicit invocation | Details |
 | --- | --- | --- | --- | --- |
 | `alphagenome-api` | AlphaGenome API | AlphaGenome setup, variant prediction, plotting, and troubleshooting | `$alphagenome-api` | [`SKILL.md`](./alphagenome-api/SKILL.md) |
+| `borzoi-workflows` | Borzoi Workflows | Calico Borzoi setup, tutorial execution, model download, variant scoring, and interpretation workflows | `$borzoi-workflows` | [`SKILL.md`](./borzoi-workflows/SKILL.md) |
+| `dnabert2` | DNABERT-2 | DNABERT2 embeddings, GUE evaluation, CSV validation, and custom fine-tuning workflows | `$dnabert2` | [`SKILL.md`](./dnabert2/SKILL.md) |
 | `evo2-inference` | Evo 2 Inference | Evo 2 installation, checkpoint choice, forward pass, embeddings, generation, and deployment paths | `$evo2-inference` | [`SKILL.md`](./evo2-inference/SKILL.md) |
 | `gpn-models` | GPN Models | Choosing between GPN-family frameworks and using grounded loading / CLI workflows | `$gpn-models` | [`SKILL.md`](./gpn-models/SKILL.md) |
 | `nucleotide-transformer` | Nucleotide Transformer | Classic NT v1/v2 JAX inference, tokenization, and embeddings workflows | `$nucleotide-transformer` | [`SKILL.md`](./nucleotide-transformer/SKILL.md) |
@@ -65,9 +69,11 @@ s2f-skills/
 ├── Readme/
 │   ├── AG_README.md
 │   ├── CHM13_README.md
+│   ├── DNABERT2_README.md
 │   ├── Evo2_README.md
 │   ├── GPN_README.md
 │   ├── NT_README.md
+│   ├── borzoi_README.md
 │   ├── nucleotide_transformer.md
 │   ├── nucleotide_transformer_v3.md
 │   └── segment_nt.md
@@ -75,6 +81,15 @@ s2f-skills/
 │   ├── SKILL.md
 │   ├── agents/openai.yaml
 │   └── references/
+├── borzoi-workflows/
+│   ├── SKILL.md
+│   ├── agents/openai.yaml
+│   └── references/
+├── dnabert2/
+│   ├── SKILL.md
+│   ├── agents/openai.yaml
+│   ├── references/
+│   └── scripts/
 ├── evo2-inference/
 │   ├── SKILL.md
 │   ├── agents/openai.yaml
@@ -114,7 +129,7 @@ For example:
 
 ```bash
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-cp -R alphagenome-api evo2-inference gpn-models nucleotide-transformer nucleotide-transformer-v3 segment-nt "${CODEX_HOME:-$HOME/.codex}/skills/"
+cp -R alphagenome-api borzoi-workflows dnabert2 evo2-inference gpn-models nucleotide-transformer nucleotide-transformer-v3 segment-nt "${CODEX_HOME:-$HOME/.codex}/skills/"
 ```
 
 If you prefer to keep the canonical copies in this repo, you can also symlink them into your Codex skills directory.
@@ -126,6 +141,8 @@ Each skill has a `SKILL.md` file with frontmatter that describes when the skill 
 Examples:
 
 - Asking for AlphaGenome variant prediction help may trigger `alphagenome-api`
+- Asking how to run Borzoi tutorials or score variants with Borzoi may trigger `borzoi-workflows`
+- Asking how to run DNABERT2 embeddings or fine-tune DNABERT2 on CSV datasets may trigger `dnabert2`
 - Asking how to run Evo 2 locally on GPUs may trigger `evo2-inference`
 - Asking which GPN family model fits aligned vs unaligned genomes may trigger `gpn-models`
 - Asking how to use classic NT v1/v2 in JAX may trigger `nucleotide-transformer`
@@ -148,6 +165,10 @@ Use $evo2-inference to recommend the right Evo 2 checkpoint for my hardware and 
 
 ```text
 Use $gpn-models to help me choose between GPN-Star and PhyloGPN for a new variant scoring workflow.
+```
+
+```text
+Use $dnabert2 to validate my train/dev/test CSV files and generate a DNABERT2 fine-tuning command.
 ```
 
 ```text
@@ -184,6 +205,8 @@ Some skills include small helper scripts when the same calculation or validation
 
 Current examples:
 
+- `dnabert2/scripts/validate_dataset_csv.py`
+- `dnabert2/scripts/recommend_max_length.py`
 - `nucleotide-transformer-v3/scripts/check_valid_length.py`
 - `segment-nt/scripts/compute_rescaling_factor.py`
 - `evo2-inference/scripts/run_hosted_api.py`
@@ -210,7 +233,7 @@ Useful variants:
 ```bash
 ./scripts/link_skills.sh --list
 ./scripts/link_skills.sh --skills-dir /opt/codex/skills --force
-./scripts/link_skills.sh nucleotide-transformer nucleotide-transformer-v3 segment-nt
+./scripts/link_skills.sh dnabert2 nucleotide-transformer nucleotide-transformer-v3 segment-nt borzoi-workflows
 ```
 
 ### 2. Provision the software stack you need
@@ -222,6 +245,7 @@ Use the deployment helper on the target machine:
 ./scripts/provision_stack.sh gpn
 ./scripts/provision_stack.sh nt-jax
 ./scripts/provision_stack.sh ntv3-hf
+./scripts/provision_stack.sh borzoi
 ```
 
 For a one-step fresh-machine install of the default stacks:
@@ -244,6 +268,34 @@ make bootstrap
 `ntv3-hf` is the recommended NTv3 tutorial environment for:
 
 - `nucleotide-transformer-v3`
+
+`borzoi` is the recommended environment for:
+
+- `borzoi-workflows`
+
+#### Borzoi stack
+
+For Borzoi tutorials and repository workflows (TensorFlow path):
+
+```bash
+./scripts/provision_stack.sh borzoi
+```
+
+One-step variant:
+
+```bash
+./scripts/bootstrap.sh --with-borzoi
+# or
+make bootstrap-borzoi
+```
+
+The `borzoi` stack clones and installs:
+
+- `calico/baskerville`
+- `calico/borzoi`
+- `calico/westminster`
+
+Note: some Borzoi scripts still rely on `BORZOI_DIR`-style environment variables (`env_vars.sh` in upstream repos).
 
 #### Evo 2 light install
 
@@ -358,6 +410,7 @@ Optional import checks against deployed environments:
   --gpn-python /path/to/gpn/bin/python \
   --nt-python /path/to/nt-jax/bin/python \
   --ntv3-python /path/to/ntv3-hf/bin/python \
+  --borzoi-python /path/to/borzoi/bin/python \
   --evo2-python /path/to/evo2-light/bin/python
 ```
 
@@ -380,6 +433,8 @@ Use this section to jump directly to each skill's detailed instructions and supp
 | Skill | Primary use | Docs |
 | --- | --- | --- |
 | `alphagenome-api` | AlphaGenome API setup, prediction, and plotting workflows | [`SKILL.md`](./alphagenome-api/SKILL.md) · [`references/`](./alphagenome-api/references/) |
+| `borzoi-workflows` | Borzoi setup, data/train tutorials, variant scoring, and interpretation workflows | [`SKILL.md`](./borzoi-workflows/SKILL.md) · [`references/`](./borzoi-workflows/references/) |
+| `dnabert2` | DNABERT2 embeddings, GUE evaluation, and custom fine-tuning workflows | [`SKILL.md`](./dnabert2/SKILL.md) · [`references/`](./dnabert2/references/) |
 | `evo2-inference` | Evo 2 install/inference paths and hardware-aware setup | [`SKILL.md`](./evo2-inference/SKILL.md) · [`references/`](./evo2-inference/references/) |
 | `gpn-models` | GPN-family selection, alignment requirements, and checkpoint usage | [`SKILL.md`](./gpn-models/SKILL.md) · [`references/`](./gpn-models/references/) |
 | `nucleotide-transformer` | Classic NT v1/v2 JAX workflows and tokenization behavior | [`SKILL.md`](./nucleotide-transformer/SKILL.md) · [`references/`](./nucleotide-transformer/references/) |
@@ -400,13 +455,15 @@ Better prompts:
 - `Use $alphagenome-api to write a notebook cell that compares REF vs ALT RNA-seq output for a single variant.`
 - `Use $evo2-inference to tell me whether I can run evo2_20b on my machine and give me the correct install path.`
 - `Use $gpn-models to tell me whether aligned genomes are required for this workflow and suggest the right family.`
+- `Use $dnabert2 to check my DNABERT2 CSV schema and recommend model_max_length from sequence lengths.`
 - `Use $nucleotide-transformer to write a minimal JAX example with 250M_multi_species_v2 and explain 6-mer tokenization.`
 - `Use $nucleotide-transformer-v3 to write a post-trained NTv3 Transformers example for human and explain the output tensors.`
 - `Use $segment-nt to help me run SegmentNT on a 40 kb sequence and calculate the needed rescaling factor.`
+- `Use $borzoi-workflows to set up Borzoi and run latest tutorial variant scoring scripts on a small VCF.`
 
 ## Current Scope
 
-This repository currently ships the six skills listed above.
+This repository currently ships the eight skills listed above.
 
 `Readme/CHM13_README.md` exists as source material, but a packaged CHM13 skill has not been added yet.
 

@@ -15,6 +15,7 @@ Stacks:
   gpn           Song Lab GPN package
   nt-jax        Classic NT + SegmentNT-family JAX stack (source install)
   ntv3-hf       NTv3 tutorial stack (Hugging Face Transformers + PyTorch)
+  borzoi        Calico Borzoi stack (baskerville + borzoi + westminster)
   evo2-light    Evo 2 light install (7B-class workflow)
   evo2-full     Evo 2 full install inside an active conda environment
 
@@ -150,6 +151,24 @@ case "$stack" in
       torch \
       "numpy<2"
     echo "ready: ntv3-hf environment at $venv_dir"
+    ;;
+  borzoi)
+    venv_dir="$venv_root/borzoi"
+    venv_python="$(create_venv "$python_bin" "$venv_dir")"
+    if ! "$venv_python" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)'; then
+      echo "error: borzoi workflows are grounded on Python 3.10+ in this repository." >&2
+      echo "hint: rerun with --python python3.10 (or newer)." >&2
+      exit 2
+    fi
+    "$venv_python" -m pip install --upgrade pip setuptools wheel
+    clone_if_missing "https://github.com/calico/baskerville.git" "$src_root/baskerville"
+    clone_if_missing "https://github.com/calico/borzoi.git" "$src_root/borzoi"
+    clone_if_missing "https://github.com/calico/westminster.git" "$src_root/westminster"
+    "$venv_python" -m pip install "$src_root/baskerville"
+    "$venv_python" -m pip install "$src_root/borzoi"
+    "$venv_python" -m pip install "$src_root/westminster"
+    echo "ready: borzoi environment at $venv_dir"
+    echo "note: some Borzoi scripts still expect BORZOI_DIR/BORZOI_HG38/BORZOI_MM10 style environment variables."
     ;;
   evo2-light)
     if [[ -z "${TORCH_INSTALL_CMD:-}" ]]; then

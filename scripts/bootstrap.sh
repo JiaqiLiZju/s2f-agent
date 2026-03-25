@@ -26,6 +26,7 @@ Options:
   --with-evo2-light      Also provision evo2-light and include it in smoke tests.
   --with-evo2-full       Also provision evo2-full in the currently active conda env.
   --with-ntv3-hf         Also provision ntv3-hf and include it in smoke tests.
+  --with-borzoi          Also provision borzoi and include it in smoke tests.
   --skip-link            Skip linking/copying skills.
   --skip-smoke           Skip the final smoke test.
   -h, --help             Show this help message.
@@ -44,6 +45,7 @@ force_links=0
 with_evo2_light=0
 with_evo2_full=0
 with_ntv3_hf=0
+with_borzoi=0
 skip_link=0
 skip_smoke=0
 
@@ -79,6 +81,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --with-ntv3-hf)
       with_ntv3_hf=1
+      shift
+      ;;
+    --with-borzoi)
+      with_borzoi=1
       shift
       ;;
     --skip-link)
@@ -146,6 +152,14 @@ if [[ "$with_ntv3_hf" -eq 1 ]]; then
   ntv3_python="$deploy_root/venvs/ntv3-hf/bin/python"
 fi
 
+borzoi_python=""
+if [[ "$with_borzoi" -eq 1 ]]; then
+  bash "$REPO_ROOT/scripts/provision_stack.sh" borzoi \
+    --deploy-root "$deploy_root" \
+    --python "$python_bin"
+  borzoi_python="$deploy_root/venvs/borzoi/bin/python"
+fi
+
 if [[ "$skip_smoke" -ne 1 ]]; then
   smoke_args=(--skills-dir "$skills_dir")
   smoke_args+=(--alphagenome-python "$deploy_root/venvs/alphagenome/bin/python")
@@ -153,6 +167,9 @@ if [[ "$skip_smoke" -ne 1 ]]; then
   smoke_args+=(--nt-python "$deploy_root/venvs/nt-jax/bin/python")
   if [[ -n "$ntv3_python" ]]; then
     smoke_args+=(--ntv3-python "$ntv3_python")
+  fi
+  if [[ -n "$borzoi_python" ]]; then
+    smoke_args+=(--borzoi-python "$borzoi_python")
   fi
   if [[ -n "$evo2_python" ]]; then
     smoke_args+=(--evo2-python "$evo2_python")

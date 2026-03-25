@@ -4,6 +4,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL_IDS=(
   "alphagenome-api"
+  "borzoi-workflows"
+  "dnabert2"
   "evo2-inference"
   "gpn-models"
   "nucleotide-transformer"
@@ -24,6 +26,7 @@ Options:
   --gpn-python P           Run GPN import checks with this Python executable.
   --nt-python P            Run classic NT / SegmentNT JAX import checks with this Python executable.
   --ntv3-python P          Run NTv3 Transformers import checks with this Python executable.
+  --borzoi-python P        Run Borzoi import checks with this Python executable.
   --evo2-python P          Run Evo 2 import checks with this Python executable.
   -h, --help               Show this help message.
 EOF
@@ -34,6 +37,7 @@ alphagenome_python=""
 gpn_python=""
 nt_python=""
 ntv3_python=""
+borzoi_python=""
 evo2_python=""
 
 while [[ $# -gt 0 ]]; do
@@ -56,6 +60,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --ntv3-python)
       ntv3_python="$2"
+      shift 2
+      ;;
+    --borzoi-python)
+      borzoi_python="$2"
       shift 2
       ;;
     --evo2-python)
@@ -110,6 +118,8 @@ check_exists "$REPO_ROOT/scripts/link_skills.sh" "link_skills.sh"
 check_exists "$REPO_ROOT/scripts/bootstrap.sh" "bootstrap.sh"
 check_exists "$REPO_ROOT/scripts/provision_stack.sh" "provision_stack.sh"
 check_exists "$REPO_ROOT/scripts/smoke_test.sh" "smoke_test.sh"
+check_exists "$REPO_ROOT/dnabert2/scripts/validate_dataset_csv.py" "DNABERT2 dataset validator"
+check_exists "$REPO_ROOT/dnabert2/scripts/recommend_max_length.py" "DNABERT2 max-length helper"
 check_exists "$REPO_ROOT/nucleotide-transformer-v3/scripts/check_valid_length.py" "NTv3 helper script"
 check_exists "$REPO_ROOT/nucleotide-transformer-v3/scripts/run_track_prediction.py" "NTv3 track prediction script"
 check_exists "$REPO_ROOT/segment-nt/scripts/compute_rescaling_factor.py" "SegmentNT helper script"
@@ -142,6 +152,11 @@ run_import_check \
   "ntv3-transformers" \
   "$ntv3_python" \
   'from transformers import AutoModel, AutoModelForMaskedLM, AutoTokenizer; import huggingface_hub; import torch'
+
+run_import_check \
+  "borzoi" \
+  "$borzoi_python" \
+  'import borzoi'
 
 run_import_check \
   "evo2" \

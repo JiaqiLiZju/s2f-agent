@@ -20,7 +20,7 @@ ifeq ($(FORCE_LINKS),1)
 BOOTSTRAP_FLAGS += --force-links
 endif
 
-.PHONY: help link-skills bootstrap bootstrap-ntv3-hf bootstrap-evo2-light bootstrap-evo2-full smoke
+.PHONY: help link-skills bootstrap bootstrap-ntv3-hf bootstrap-borzoi bootstrap-evo2-light bootstrap-evo2-full smoke
 
 help:
 	@printf '%s\n' \
@@ -28,6 +28,7 @@ help:
 	  '  make link-skills           Link all packaged skills into the Codex skills dir' \
 	  '  make bootstrap             One-step install: skills + alphagenome + gpn + nt-jax + smoke test' \
 	  '  make bootstrap-ntv3-hf     Same as bootstrap, plus ntv3-hf (Transformers path) + smoke check' \
+	  '  make bootstrap-borzoi      Same as bootstrap, plus borzoi (Calico tutorial stack) + smoke check' \
 	  '  make bootstrap-evo2-light  Same as bootstrap, plus evo2-light (requires TORCH_INSTALL_CMD)' \
 	  '  make bootstrap-evo2-full   Same as bootstrap, plus evo2-full in active conda env' \
 	  '  make smoke                 Run smoke tests against the deployed paths' \
@@ -58,6 +59,14 @@ bootstrap-ntv3-hf:
 	  --deploy-root "$(DEPLOY_ROOT)" \
 	  --python "$(PYTHON_BIN)" \
 	  --with-ntv3-hf \
+	  $(BOOTSTRAP_FLAGS)
+
+bootstrap-borzoi:
+	bash $(REPO_ROOT)/scripts/bootstrap.sh \
+	  --skills-dir "$(SKILLS_DIR)" \
+	  --deploy-root "$(DEPLOY_ROOT)" \
+	  --python "$(PYTHON_BIN)" \
+	  --with-borzoi \
 	  $(BOOTSTRAP_FLAGS)
 
 bootstrap-evo2-light:
