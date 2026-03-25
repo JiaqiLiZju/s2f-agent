@@ -21,6 +21,12 @@ The upstream `requirements.txt` pins:
 - `einops==0.6.1`
 - `omegaconf==2.3.0`
 
+Optional extras for coordinate-based embedding plots:
+
+```bash
+python -m pip install matplotlib requests
+```
+
 ## Optional flash-attention/triton path
 
 The README documents an optional Triton-from-source path before installing requirements:
@@ -46,15 +52,27 @@ Use one of the grounded loading patterns:
 - Build `BertConfig` first
 - Pass `config=config` into `AutoModel.from_pretrained(..., trust_remote_code=True, config=config)`
 
+## Cache directories in restricted environments
+
+If default cache paths are not writable, set:
+
+```bash
+export HF_HOME=/path/to/.hf-cache
+export TRANSFORMERS_CACHE=/path/to/.hf-cache/transformers
+export HUGGINGFACE_HUB_CACHE=/path/to/.hf-cache/hub
+```
+
 ## Minimal environment smoke check
 
 ```bash
 python - <<'PY'
 import torch
 from transformers import AutoTokenizer, AutoModel
+from transformers.models.bert.configuration_bert import BertConfig
 model_id = "zhihan1996/DNABERT-2-117M"
 _ = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-_ = AutoModel.from_pretrained(model_id, trust_remote_code=True)
+config = BertConfig.from_pretrained(model_id)
+_ = AutoModel.from_pretrained(model_id, trust_remote_code=True, config=config)
 print("dnabert2_load_ok", torch.__version__)
 PY
 ```

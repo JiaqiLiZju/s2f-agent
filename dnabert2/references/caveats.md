@@ -30,3 +30,20 @@ The README guidance uses an approximation (`~0.25 * bp_length`) because tokeniza
 ## 6) Pre-training is not fully packaged in this repo
 
 README points to MosaicBERT and HF `run_mlm.py` references for pre-training replication, not a one-command local script in this source tree.
+
+## 7) Expected warnings during embedding-only inference
+
+When loading `BertModel` from the DNABERT2 checkpoint, the following warnings are expected:
+
+- MLM-head weights are unused (`cls.predictions.*`).
+- Pooler weights may be newly initialized.
+- ALiBi size may increase for longer sequences (`Increasing alibi size from 512 ...`).
+- Missing Triton may trigger a throughput warning and fallback to PyTorch attention.
+
+These warnings do not usually indicate failure for embedding extraction workflows.
+
+## 8) Coordinate-to-sequence workflows need explicit provenance
+
+- Always verify coordinate convention (`[start, end)`), assembly, and chromosome naming.
+- Confirm fetched sequence length equals `end - start`.
+- Record sequence source (local FASTA/2bit or remote API URL) in metadata for reproducibility.
