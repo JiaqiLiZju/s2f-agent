@@ -1,0 +1,4 @@
+interface:
+  display_name: "BPNet Workflows"
+  short_description: "BPNet training, prediction, and attribution workflows"
+  default_prompt: "Use $bpnet to help me set up BPNet, prepare input JSONs, and run train/predict/SHAP workflows."
