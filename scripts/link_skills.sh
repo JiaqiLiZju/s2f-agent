@@ -5,6 +5,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEFAULT_SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
 AVAILABLE_SKILLS=(
   "alphagenome-api"
+  "bpnet"
   "borzoi-workflows"
   "dnabert2"
   "evo2-inference"

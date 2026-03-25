@@ -5,6 +5,7 @@ An English-language Codex skills repository for genomics and genome-model workfl
 This repo packages reusable skills that help Codex work with:
 
 - AlphaGenome API workflows
+- BPNet workflows (preprocessing, training, prediction, attribution)
 - Borzoi repository workflows (setup, training, variant scoring, interpretation)
 - DNABERT-2 inference and fine-tuning workflows
 - Evo 2 installation and inference
@@ -46,11 +47,12 @@ Use $nucleotide-transformer-v3 to write a species-conditioned NTv3 inference exa
 
 ## What This Repository Contains
 
-The repository currently includes eight packaged skills:
+The repository currently includes nine packaged skills:
 
 | Skill ID | Display name | Best for | Explicit invocation | Details |
 | --- | --- | --- | --- | --- |
 | `alphagenome-api` | AlphaGenome API | AlphaGenome setup, variant prediction, plotting, and troubleshooting | `$alphagenome-api` | [`SKILL.md`](./alphagenome-api/SKILL.md) |
+| `bpnet` | BPNet Workflows | BPNet setup, preprocessing, train/predict/SHAP workflows, and motif discovery integration | `$bpnet` | [`SKILL.md`](./bpnet/SKILL.md) |
 | `borzoi-workflows` | Borzoi Workflows | Calico Borzoi setup, tutorial execution, model download, variant scoring, and interpretation workflows | `$borzoi-workflows` | [`SKILL.md`](./borzoi-workflows/SKILL.md) |
 | `dnabert2` | DNABERT-2 | DNABERT2 embeddings, GUE evaluation, CSV validation, and custom fine-tuning workflows | `$dnabert2` | [`SKILL.md`](./dnabert2/SKILL.md) |
 | `evo2-inference` | Evo 2 Inference | Evo 2 installation, checkpoint choice, forward pass, embeddings, generation, and deployment paths | `$evo2-inference` | [`SKILL.md`](./evo2-inference/SKILL.md) |
@@ -68,6 +70,7 @@ s2f-skills/
 ├── README.md
 ├── Readme/
 │   ├── AG_README.md
+│   ├── bpnet_README.md
 │   ├── CHM13_README.md
 │   ├── DNABERT2_README.md
 │   ├── Evo2_README.md
@@ -78,6 +81,10 @@ s2f-skills/
 │   ├── nucleotide_transformer_v3.md
 │   └── segment_nt.md
 ├── alphagenome-api/
+│   ├── SKILL.md
+│   ├── agents/openai.yaml
+│   └── references/
+├── bpnet/
 │   ├── SKILL.md
 │   ├── agents/openai.yaml
 │   └── references/
@@ -129,7 +136,7 @@ For example:
 
 ```bash
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-cp -R alphagenome-api borzoi-workflows dnabert2 evo2-inference gpn-models nucleotide-transformer nucleotide-transformer-v3 segment-nt "${CODEX_HOME:-$HOME/.codex}/skills/"
+cp -R alphagenome-api bpnet borzoi-workflows dnabert2 evo2-inference gpn-models nucleotide-transformer nucleotide-transformer-v3 segment-nt "${CODEX_HOME:-$HOME/.codex}/skills/"
 ```
 
 If you prefer to keep the canonical copies in this repo, you can also symlink them into your Codex skills directory.
@@ -141,6 +148,7 @@ Each skill has a `SKILL.md` file with frontmatter that describes when the skill 
 Examples:
 
 - Asking for AlphaGenome variant prediction help may trigger `alphagenome-api`
+- Asking how to run BPNet training, prediction, SHAP, or input-data setup may trigger `bpnet`
 - Asking how to run Borzoi tutorials or score variants with Borzoi may trigger `borzoi-workflows`
 - Asking how to run DNABERT2 embeddings or fine-tune DNABERT2 on CSV datasets may trigger `dnabert2`
 - Asking how to run Evo 2 locally on GPUs may trigger `evo2-inference`
@@ -233,7 +241,7 @@ Useful variants:
 ```bash
 ./scripts/link_skills.sh --list
 ./scripts/link_skills.sh --skills-dir /opt/codex/skills --force
-./scripts/link_skills.sh dnabert2 nucleotide-transformer nucleotide-transformer-v3 segment-nt borzoi-workflows
+./scripts/link_skills.sh bpnet dnabert2 nucleotide-transformer nucleotide-transformer-v3 segment-nt borzoi-workflows
 ```
 
 ### 2. Provision the software stack you need
@@ -433,6 +441,7 @@ Use this section to jump directly to each skill's detailed instructions and supp
 | Skill | Primary use | Docs |
 | --- | --- | --- |
 | `alphagenome-api` | AlphaGenome API setup, prediction, and plotting workflows | [`SKILL.md`](./alphagenome-api/SKILL.md) · [`references/`](./alphagenome-api/references/) |
+| `bpnet` | BPNet setup, preprocessing, train/predict/SHAP, and motif/hit-calling integration | [`SKILL.md`](./bpnet/SKILL.md) · [`references/`](./bpnet/references/) |
 | `borzoi-workflows` | Borzoi setup, data/train tutorials, variant scoring, and interpretation workflows | [`SKILL.md`](./borzoi-workflows/SKILL.md) · [`references/`](./borzoi-workflows/references/) |
 | `dnabert2` | DNABERT2 embeddings, GUE evaluation, and custom fine-tuning workflows | [`SKILL.md`](./dnabert2/SKILL.md) · [`references/`](./dnabert2/references/) |
 | `evo2-inference` | Evo 2 install/inference paths and hardware-aware setup | [`SKILL.md`](./evo2-inference/SKILL.md) · [`references/`](./evo2-inference/references/) |
@@ -453,6 +462,7 @@ If you want the best results, keep prompts concrete:
 Better prompts:
 
 - `Use $alphagenome-api to write a notebook cell that compares REF vs ALT RNA-seq output for a single variant.`
+- `Use $bpnet to draft input_data.json and a runnable bpnet-train/bpnet-shap workflow for my ChIP-seq peaks.`
 - `Use $evo2-inference to tell me whether I can run evo2_20b on my machine and give me the correct install path.`
 - `Use $gpn-models to tell me whether aligned genomes are required for this workflow and suggest the right family.`
 - `Use $dnabert2 to check my DNABERT2 CSV schema and recommend model_max_length from sequence lengths.`
@@ -463,7 +473,7 @@ Better prompts:
 
 ## Current Scope
 
-This repository currently ships the eight skills listed above.
+This repository currently ships the nine skills listed above.
 
 `Readme/CHM13_README.md` exists as source material, but a packaged CHM13 skill has not been added yet.
 
