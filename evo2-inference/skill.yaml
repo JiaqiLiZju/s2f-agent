@@ -1,0 +1,36 @@
+schema_version: 1
+id: evo2-inference
+title: Evo 2 Inference
+path: evo2-inference
+status: active
+family: genome-language-model-inference
+tasks:
+  - setup
+  - forward
+  - embedding
+  - generation
+  - hosted-api
+  - variant-effect
+triggers:
+  - evo2
+  - nvcf
+  - nim
+  - flash-attn
+  - return_embeddings
+required_inputs:
+  - hardware-context
+  - execution-path
+optional_inputs:
+  - checkpoint-choice
+  - generation-params
+  - api-endpoint
+constraints:
+  - local-path-needs-linux-or-wsl2-plus-nvidia-cuda
+  - fp8-checkpoints-need-transformer-engine-and-hopper-gpus
+  - variant-effect-is-ref-alt-proxy-not-predict-variant-api
+tools:
+  - scripts/run_hosted_api.py
+  - scripts/run_real_evo2_workflow.py
+priority_rules:
+  - prefer-when-user-explicitly-mentions-evo2
+  - prefer-when-task-needs-hosted-generation-or-hardware-aware-checkpoint-choice

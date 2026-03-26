@@ -1,0 +1,134 @@
+schema_version: 1
+updated_at: "2026-03-26"
+skills:
+  - id: alphagenome-api
+    path: alphagenome-api
+    enabled: true
+    family: api-variant-prediction
+    tasks:
+      - variant-effect
+      - interval-prediction
+      - plotting
+      - troubleshooting
+    triggers:
+      - alphagenome
+      - dna_client
+      - predict_variant
+  - id: basset-workflows
+    path: basset-workflows
+    enabled: true
+    family: legacy-cnn-regulatory
+    tasks:
+      - preprocessing
+      - training
+      - prediction
+      - interpretation
+    triggers:
+      - basset
+      - torch7
+      - sad
+  - id: bpnet
+    path: bpnet
+    enabled: true
+    family: profile-prediction-and-attribution
+    tasks:
+      - preprocessing
+      - training
+      - prediction
+      - attribution
+    triggers:
+      - bpnet
+      - shap
+      - motif
+  - id: borzoi-workflows
+    path: borzoi-workflows
+    enabled: true
+    family: sequence-to-signal
+    tasks:
+      - setup
+      - variant-effect
+      - interpretation
+      - tutorial-playbooks
+    triggers:
+      - borzoi
+      - westminster
+      - baskerville
+  - id: dnabert2
+    path: dnabert2
+    enabled: true
+    family: transformer-embedding-and-finetuning
+    tasks:
+      - embedding
+      - gue-evaluation
+      - fine-tuning
+      - csv-validation
+    triggers:
+      - dnabert2
+      - zhihan1996/DNABERT-2-117M
+      - gue
+  - id: evo2-inference
+    path: evo2-inference
+    enabled: true
+    family: genome-language-model-inference
+    tasks:
+      - setup
+      - forward
+      - embedding
+      - generation
+      - hosted-api
+    triggers:
+      - evo2
+      - nvcf
+      - flash-attn
+  - id: gpn-models
+    path: gpn-models
+    enabled: true
+    family: phylogenetic-language-models
+    tasks:
+      - framework-selection
+      - loading
+      - training
+      - variant-scoring
+    triggers:
+      - gpn
+      - phylogpn
+      - gpn-star
+  - id: nucleotide-transformer
+    path: nucleotide-transformer
+    enabled: true
+    family: jax-haiku-transformers
+    tasks:
+      - setup
+      - tokenization
+      - embedding
+      - attention-analysis
+    triggers:
+      - nucleotide-transformer
+      - nt-jax
+      - 6-mer
+  - id: nucleotide-transformer-v3
+    path: nucleotide-transformer-v3
+    enabled: true
+    family: transformers-ntv3
+    tasks:
+      - setup
+      - embedding
+      - track-prediction
+      - troubleshooting
+    triggers:
+      - ntv3
+      - species-conditioning
+      - post-trained
+  - id: segment-nt
+    path: segment-nt
+    enabled: true
+    family: segmentation-heads
+    tasks:
+      - segmentation-inference
+      - rescaling-factor
+      - constraints
+      - troubleshooting
+    triggers:
+      - segmentnt
+      - segmentenformer
+      - segmentborzoi

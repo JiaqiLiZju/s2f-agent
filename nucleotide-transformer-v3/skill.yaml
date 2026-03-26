@@ -1,0 +1,32 @@
+schema_version: 1
+id: nucleotide-transformer-v3
+title: Nucleotide Transformer v3
+path: nucleotide-transformer-v3
+status: active
+family: transformers-ntv3
+tasks:
+  - embedding
+  - track-prediction
+  - setup
+  - troubleshooting
+triggers:
+  - ntv3
+  - species-conditioning
+  - post-trained
+required_inputs:
+  - species
+  - sequence-or-interval
+optional_inputs:
+  - assembly
+  - output-head
+  - model-id
+constraints:
+  - input-length-must-follow-divisibility-rules
+  - center-crop-head-output-may-apply
+  - hf-first-path-recommended
+tools:
+  - scripts/check_valid_length.py
+  - scripts/run_track_prediction.py
+priority_rules:
+  - prefer-when-user-explicitly-mentions-ntv3
+  - prefer-when-task-needs-species-conditioned-track-prediction

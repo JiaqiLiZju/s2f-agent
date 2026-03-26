@@ -1,0 +1,32 @@
+schema_version: 1
+id: dnabert2
+title: DNABERT-2
+path: dnabert2
+status: active
+family: transformer-embedding-and-finetuning
+tasks:
+  - embedding
+  - gue-evaluation
+  - fine-tuning
+  - csv-validation
+triggers:
+  - dnabert2
+  - zhihan1996/DNABERT-2-117M
+  - gue
+required_inputs:
+  - sequence-or-interval
+optional_inputs:
+  - train-dev-test-csv
+  - sequence-length
+  - gpu-count
+constraints:
+  - transformers-version-path-is-conditional
+  - trust-remote-code-required
+  - use-kmer-minus-one-for-dnabert2-finetuning
+tools:
+  - scripts/validate_dataset_csv.py
+  - scripts/recommend_max_length.py
+  - scripts/embed_interval_plot.py
+priority_rules:
+  - prefer-when-user-explicitly-mentions-dnabert2
+  - prefer-when-task-is-dna-csv-validation-or-dnabert2-finetuning

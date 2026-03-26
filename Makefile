@@ -20,12 +20,19 @@ ifeq ($(FORCE_LINKS),1)
 BOOTSTRAP_FLAGS += --force-links
 endif
 
-.PHONY: help link-skills bootstrap bootstrap-ntv3-hf bootstrap-borzoi bootstrap-evo2-light bootstrap-evo2-full smoke
+.PHONY: help link-skills validate-registry validate-skill-metadata validate-agent eval-routing route-query run-agent agent-console bootstrap bootstrap-ntv3-hf bootstrap-borzoi bootstrap-evo2-light bootstrap-evo2-full smoke
 
 help:
 	@printf '%s\n' \
 	  'Available targets:' \
 	  '  make link-skills           Link all packaged skills into the Codex skills dir' \
+	  '  make validate-registry     Validate registry entries against local skill package paths' \
+	  '  make validate-skill-metadata Validate skill.yaml completeness and registry consistency' \
+	  '  make validate-agent        Run registry + skill metadata + routing validations' \
+	  '  make eval-routing          Evaluate routing behavior using eval cases and registry metadata' \
+	  '  make route-query           Route one query (set QUERY=... and optional TASK=...)' \
+	  '  make run-agent             Run full agent orchestration (set QUERY=... and optional TASK=...)' \
+	  '  make agent-console         Open interactive local agent console' \
 	  '  make bootstrap             One-step install: skills + alphagenome + gpn + nt-jax + smoke test' \
 	  '  make bootstrap-ntv3-hf     Same as bootstrap, plus ntv3-hf (Transformers path) + smoke check' \
 	  '  make bootstrap-borzoi      Same as bootstrap, plus borzoi (Calico tutorial stack) + smoke check' \
@@ -45,6 +52,45 @@ help:
 
 link-skills:
 	bash $(REPO_ROOT)/scripts/link_skills.sh --skills-dir "$(SKILLS_DIR)" $(if $(filter 1,$(COPY_SKILLS)),--copy,) $(if $(filter 1,$(FORCE_LINKS)),--force,)
+
+validate-registry:
+	bash $(REPO_ROOT)/scripts/validate_registry.sh
+
+validate-skill-metadata:
+	bash $(REPO_ROOT)/scripts/validate_skill_metadata.sh
+
+validate-agent:
+	bash $(REPO_ROOT)/scripts/validate_registry.sh
+	bash $(REPO_ROOT)/scripts/validate_skill_metadata.sh
+	bash $(REPO_ROOT)/scripts/validate_routing.sh
+
+eval-routing:
+	bash $(REPO_ROOT)/scripts/validate_routing.sh
+
+route-query:
+	@if [[ -z "$(QUERY)" ]]; then \
+	  echo "error: set QUERY='<your query>' for make route-query"; \
+	  exit 1; \
+	fi
+	@if [[ -n "$(TASK)" ]]; then \
+	  bash $(REPO_ROOT)/scripts/route_query.sh --query "$(QUERY)" --task "$(TASK)"; \
+	else \
+	  bash $(REPO_ROOT)/scripts/route_query.sh --query "$(QUERY)"; \
+	fi
+
+run-agent:
+	@if [[ -z "$(QUERY)" ]]; then \
+	  echo "error: set QUERY='<your query>' for make run-agent"; \
+	  exit 1; \
+	fi
+	@if [[ -n "$(TASK)" ]]; then \
+	  bash $(REPO_ROOT)/scripts/run_agent.sh --query "$(QUERY)" --task "$(TASK)"; \
+	else \
+	  bash $(REPO_ROOT)/scripts/run_agent.sh --query "$(QUERY)"; \
+	fi
+
+agent-console:
+	bash $(REPO_ROOT)/scripts/agent_console.sh
 
 bootstrap:
 	bash $(REPO_ROOT)/scripts/bootstrap.sh \

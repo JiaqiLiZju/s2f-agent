@@ -50,6 +50,8 @@ Use $nucleotide-transformer-v3 to write a species-conditioned NTv3 inference exa
 - [Deployment Guide](#deployment-guide)
 - [Verification and Troubleshooting](#verification-and-troubleshooting)
 - [How Skills and Agents Work](#how-skills-and-agents-work)
+- [Orchestration Layer](#orchestration-layer)
+- [Agent Runtime CLI](#agent-runtime-cli)
 - [Recommended Prompting Pattern](#recommended-prompting-pattern)
 - [Maintainers](#maintainers)
 - [Star History](#star-history)
@@ -77,6 +79,11 @@ Source notes used to build or plan skills are in [`Readme/`](./Readme/).
 
 ```text
 s2f-skills/
+├── agent/
+├── registry/
+├── playbooks/
+├── evals/
+├── docs/
 ├── README.md
 ├── Readme/
 ├── scripts/
@@ -122,6 +129,7 @@ Useful variants:
 ```bash
 ./scripts/link_skills.sh --list
 ./scripts/link_skills.sh --skills-dir /opt/codex/skills --force
+./scripts/link_skills.sh --registry ./registry/skills.yaml --list
 ./scripts/link_skills.sh basset-workflows bpnet dnabert2 nucleotide-transformer nucleotide-transformer-v3 segment-nt borzoi-workflows
 ```
 
@@ -221,6 +229,50 @@ Run baseline smoke checks:
 ./scripts/smoke_test.sh --skills-dir "${CODEX_HOME:-$HOME/.codex}/skills"
 ```
 
+Validate registry entries:
+
+```bash
+./scripts/validate_registry.sh
+# or
+make validate-registry
+```
+
+Validate skill metadata consistency:
+
+```bash
+./scripts/validate_skill_metadata.sh
+# or
+make validate-skill-metadata
+```
+
+Run full agent validation bundle:
+
+```bash
+make validate-agent
+```
+
+Evaluate routing cases:
+
+```bash
+./scripts/validate_routing.sh
+# or
+make eval-routing
+```
+
+Note:
+
+- `validate_routing.sh` invokes `route_query.sh` for each eval case, so runtime routing and offline eval use one routing logic source.
+
+Run one query through the router:
+
+```bash
+./scripts/route_query.sh --query "Use \$dnabert2 to validate my train/dev/test CSV."
+./scripts/route_query.sh --query "I need NTv3 track prediction for human hg38." --format json
+# or
+make route-query QUERY='Help me run AlphaGenome predict_variant with RNA output'
+make route-query QUERY='Need variant-effect guidance' TASK='variant-effect'
+```
+
 Run with environment import checks:
 
 ```bash
@@ -278,6 +330,46 @@ UI-facing metadata for discovery and invocation:
 - `default_prompt`
 
 `agents/openai.yaml` improves discoverability, while `SKILL.md` remains the source of operational behavior.
+
+## Orchestration Layer
+
+This repository now also includes a lightweight agent orchestration layer:
+
+- `agent/`: orchestrator identity, routing policy, and safety boundaries
+- `registry/`: machine-readable skill index and tag taxonomy
+- `playbooks/`: cross-skill task patterns (`variant-effect`, `embedding`, `fine-tuning`, `track-prediction`, `environment-setup`)
+- `evals/routing/`: initial routing evaluation cases
+- `scripts/route_query.sh`: runtime router for one-off query routing (text/json output)
+- `scripts/run_agent.sh`: full runtime orchestration output (route + missing-input checks + playbook mapping)
+
+Each packaged skill now includes a machine-readable `skill.yaml` for routing metadata.
+
+Current compatibility note:
+
+- skill package paths remain at repository root for backward compatibility
+- scripts now enumerate skills from `registry/skills.yaml` rather than hardcoded lists
+
+## Agent Runtime CLI
+
+Route only:
+
+```bash
+./scripts/route_query.sh --query "Use \$dnabert2 to validate my train/dev/test CSV."
+./scripts/route_query.sh --query "I need NTv3 track prediction for hg38." --format json
+```
+
+Full orchestration output:
+
+```bash
+./scripts/run_agent.sh --query "Need variant-effect guidance around chr12 with REF/ALT."
+./scripts/run_agent.sh --query "Help me run Evo2 generation without NVIDIA GPU" --format json
+```
+
+Interactive local console:
+
+```bash
+./scripts/agent_console.sh
+```
 
 ## Recommended Prompting Pattern
 

@@ -1,0 +1,33 @@
+schema_version: 1
+id: borzoi-workflows
+title: Borzoi Workflows
+path: borzoi-workflows
+status: active
+family: sequence-to-signal
+tasks:
+  - setup
+  - training
+  - variant-effect
+  - interpretation
+  - structural-variant-analysis
+triggers:
+  - borzoi
+  - westminster
+  - baskerville
+  - score_variants
+  - interpret_sequence
+required_inputs:
+  - objective
+  - organism-or-build
+optional_inputs:
+  - latest-or-legacy-tutorial-path
+  - pretrained-model-path
+  - score-type
+constraints:
+  - python310-and-tf215-grounded-path
+  - latest-tutorials-preferred-over-legacy
+  - route-segmentborzoi-api-requests-to-segment-nt
+tools: []
+priority_rules:
+  - prefer-when-user-explicitly-mentions-borzoi-or-calico-tutorials
+  - prefer-when-task-is-borzoi-variant-scoring-or-sequence-interpretation

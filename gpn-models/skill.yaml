@@ -1,0 +1,33 @@
+schema_version: 1
+id: gpn-models
+title: GPN Models
+path: gpn-models
+status: active
+family: phylogenetic-language-models
+tasks:
+  - framework-selection
+  - loading
+  - training
+  - embedding
+  - variant-effect
+triggers:
+  - gpn
+  - phylogpn
+  - gpn-star
+  - gpn-msa
+  - run_vep
+required_inputs:
+  - model-family-objective
+optional_inputs:
+  - alignment-availability
+  - schema-columns
+  - compute-path
+constraints:
+  - gpn-msa-deprecated-in-favor-of-gpn-star
+  - alignment-requirement-varies-by-family
+  - verify-schema-for-gpn-ss-commands
+tools:
+  - references/predict_variant_single_site.py
+priority_rules:
+  - prefer-when-user-explicitly-mentions-gpn-family-models
+  - prefer-when-task-is-family-selection-or-gpn-variant-scoring

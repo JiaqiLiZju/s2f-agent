@@ -1,0 +1,92 @@
+schema_version: 1
+tags:
+  variant-effect:
+    - alphagenome-api
+    - borzoi-workflows
+    - gpn-models
+    - evo2-inference
+  embedding:
+    - dnabert2
+    - nucleotide-transformer
+    - nucleotide-transformer-v3
+    - evo2-inference
+  fine-tuning:
+    - dnabert2
+    - bpnet
+    - basset-workflows
+  track-prediction:
+    - nucleotide-transformer-v3
+    - segment-nt
+    - borzoi-workflows
+  environment-setup:
+    - alphagenome-api
+    - gpn-models
+    - nucleotide-transformer
+    - nucleotide-transformer-v3
+    - borzoi-workflows
+    - evo2-inference
+  troubleshooting:
+    - alphagenome-api
+    - dnabert2
+    - nucleotide-transformer-v3
+    - segment-nt
+    - evo2-inference
+  framework-selection:
+    - gpn-models
+    - nucleotide-transformer
+    - nucleotide-transformer-v3
+  interpretation:
+    - basset-workflows
+    - bpnet
+    - borzoi-workflows
+    - segment-nt
+  interval-prediction:
+    - alphagenome-api
+  plotting:
+    - alphagenome-api
+  preprocessing:
+    - basset-workflows
+    - bpnet
+  training:
+    - basset-workflows
+    - bpnet
+    - borzoi-workflows
+    - gpn-models
+  prediction:
+    - basset-workflows
+    - bpnet
+  sad-analysis:
+    - basset-workflows
+  attribution:
+    - bpnet
+  motif-analysis:
+    - bpnet
+  setup:
+    - borzoi-workflows
+    - evo2-inference
+    - nucleotide-transformer
+    - nucleotide-transformer-v3
+  structural-variant-analysis:
+    - borzoi-workflows
+  gue-evaluation:
+    - dnabert2
+  csv-validation:
+    - dnabert2
+  forward:
+    - evo2-inference
+  generation:
+    - evo2-inference
+  hosted-api:
+    - evo2-inference
+  loading:
+    - gpn-models
+  tokenization:
+    - nucleotide-transformer
+  attention-analysis:
+    - nucleotide-transformer
+  segmentation-inference:
+    - segment-nt
+  family-selection:
+    - segment-nt
+  rescaling-factor:
+    - segment-nt

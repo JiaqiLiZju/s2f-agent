@@ -1,0 +1,31 @@
+schema_version: 1
+id: nucleotide-transformer
+title: Nucleotide Transformer
+path: nucleotide-transformer
+status: active
+family: jax-haiku-transformers
+tasks:
+  - setup
+  - tokenization
+  - embedding
+  - attention-analysis
+triggers:
+  - nucleotide-transformer
+  - nt-jax
+  - get_pretrained_model
+  - 6-mer
+required_inputs:
+  - model-name
+  - sequence
+optional_inputs:
+  - embeddings-layers
+  - attention-head-selection
+  - max-positions
+constraints:
+  - jax-haiku-api-path-required
+  - 6-mer-tokenization-with-special-n-handling
+  - route-ntv3-species-conditioned-requests-to-ntv3-skill
+tools: []
+priority_rules:
+  - prefer-when-user-explicitly-mentions-nt-v1-or-v2-jax-path
+  - prefer-when-task-needs-6-mer-tokenization-and-attention-analysis
