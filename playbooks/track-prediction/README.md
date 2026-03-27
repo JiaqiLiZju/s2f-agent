@@ -38,3 +38,11 @@ A valid answer should include:
 2. length and model-head constraints
 3. runnable minimal inference snippet
 4. caveats for output interpretation
+
+## Minimal Repro Example
+
+```bash
+bash scripts/run_agent.sh \
+  --task track-prediction \
+  --query "Need track-prediction plan for human hg38 interval and head output."
+```

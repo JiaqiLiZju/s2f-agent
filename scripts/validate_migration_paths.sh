@@ -18,6 +18,7 @@ Options:
   --registry FILE   Skill registry file. Default: <repo>/registry/skills.yaml
   --manifest FILE   Migration manifest. Default: <repo>/registry/migration_wave1.yaml
   --namespace DIR   Namespace directory. Default: skills
+  --include-disabled Accepted for CLI compatibility (no effect in this validator).
   -h, --help        Show this help message.
 EOF_USAGE
 }
@@ -39,6 +40,9 @@ while [[ $# -gt 0 ]]; do
     --namespace)
       namespace_dir="$2"
       shift 2
+      ;;
+    --include-disabled)
+      shift
       ;;
     -h|--help)
       usage

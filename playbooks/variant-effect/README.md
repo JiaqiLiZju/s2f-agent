@@ -42,3 +42,11 @@ A valid answer should include:
 2. coordinate convention and assumptions
 3. runnable minimal example
 4. caveats and fallback path
+
+## Minimal Repro Example
+
+```bash
+bash scripts/run_agent.sh \
+  --task variant-effect \
+  --query "Need variant-effect guidance for hg38 chr12 REF ALT with output summary."
+```

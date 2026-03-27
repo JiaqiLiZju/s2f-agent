@@ -8,7 +8,9 @@ This repository now follows a layered design:
 2. `registry/`: machine-readable skill index and tag mapping.
    - includes `routing.yaml` (scoring, confidence, alias rules)
    - includes `task_contracts.yaml` (task-level required input contracts)
-3. skill packages (`skills/<skill>/` plus remaining unmigrated root-level skills): grounded operational behavior and references.
+   - includes `output_contracts.yaml` (task-level output-plan contract schema)
+   - includes `recovery_policies.yaml` (retry and fallback defaults)
+3. skill packages (`skills/<skill>/` for stable, `skills-dev/<skill>/` for dev): grounded operational behavior and references.
 4. `playbooks/`: cross-skill task patterns.
 5. `evals/`: routing and quality checks.
 6. `scripts/`: installation, linking, provisioning, validation.
@@ -36,6 +38,8 @@ Benefits:
   - `segment-nt`
 - Root-level paths for the migrated wave-1 skills have been removed.
 - `registry/skills.yaml` is now the source for skill enumeration in operational scripts.
+- `enabled` in `registry/skills.yaml` is enforced by default across link/route/run/validate/smoke.
+- disabled skills can still be included explicitly via `--include-disabled`.
 - `skill.yaml` is now present for all packaged skills.
 - Routing quality can be checked with `scripts/validate_routing.sh`.
 - One-off runtime routing can be executed with `scripts/route_query.sh`.
@@ -43,4 +47,6 @@ Benefits:
 - Runtime router returns a structured `decision` (`route` or `clarify`) plus confidence.
 - Full orchestration output can be executed with `scripts/run_agent.sh`.
 - `run_agent.sh` prefers task-level required inputs from `registry/task_contracts.yaml` and falls back to skill-level contracts.
+- `run_agent.sh` now emits a normalized `plan` object for core tasks.
+- `scripts/execute_plan.sh` executes or dry-runs `plan.runnable_steps` and validates expected outputs.
 - Skill metadata consistency can be checked with `scripts/validate_skill_metadata.sh`.

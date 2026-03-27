@@ -94,6 +94,61 @@ registry_get_path() {
   ' "$registry_file"
 }
 
+registry_get_scalar_field() {
+  local registry_file="$1"
+  local target_id="$2"
+  local field_name="$3"
+  registry_require_file "$registry_file"
+  awk -v target="$target_id" -v field="$field_name" '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*-[[:space:]]id:[[:space:]]*/ {
+      current = $0
+      sub(/^[[:space:]]*-[[:space:]]id:[[:space:]]*/, "", current)
+      current = cleaned(current)
+      in_block = (current == target)
+      next
+    }
+    in_block && $0 ~ ("^[[:space:]]*" field ":[[:space:]]*") {
+      v = $0
+      sub("^[[:space:]]*" field ":[[:space:]]*", "", v)
+      v = cleaned(v)
+      print v
+      exit
+    }
+  ' "$registry_file"
+}
+
+registry_skill_enabled() {
+  local registry_file="$1"
+  local target_id="$2"
+  local enabled
+  enabled="$(registry_get_scalar_field "$registry_file" "$target_id" "enabled" || true)"
+  if [[ -z "$enabled" || "$enabled" == "true" ]]; then
+    return 0
+  fi
+  return 1
+}
+
+registry_list_ids_filtered() {
+  local registry_file="$1"
+  local include_disabled="${2:-0}"
+  local skill_id
+  while IFS= read -r skill_id; do
+    [[ -z "$skill_id" ]] && continue
+    if [[ "$include_disabled" == "1" ]]; then
+      echo "$skill_id"
+      continue
+    fi
+    if registry_skill_enabled "$registry_file" "$skill_id"; then
+      echo "$skill_id"
+    fi
+  done < <(registry_list_ids "$registry_file")
+}
+
 registry_get_list_field() {
   local registry_file="$1"
   local target_id="$2"
@@ -233,4 +288,188 @@ task_contract_list_required_inputs() {
       next
     }
   ' "$contracts_file"
+}
+
+task_contract_get_task_alias() {
+  local contracts_file="$1"
+  local alias_name="$2"
+  registry_require_file "$contracts_file"
+  awk -v target="$alias_name" '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*task_aliases:[[:space:]]*$/ {
+      in_aliases = 1
+      next
+    }
+    in_aliases && $0 ~ ("^[[:space:]]{2}" target ":[[:space:]]*") {
+      v = $0
+      sub("^[[:space:]]{2}" target ":[[:space:]]*", "", v)
+      v = cleaned(v)
+      print v
+      exit
+    }
+    in_aliases && /^[[:space:]]{2}[a-zA-Z0-9_-]+:[[:space:]]*/ {
+      next
+    }
+    in_aliases && /^[^[:space:]]/ {
+      in_aliases = 0
+      next
+    }
+  ' "$contracts_file"
+}
+
+output_contract_list_field() {
+  local contracts_file="$1"
+  local task_name="$2"
+  local field_name="$3"
+  registry_require_file "$contracts_file"
+  awk -v target="$task_name" -v field="$field_name" '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*contracts:[[:space:]]*$/ {
+      in_contracts = 1
+      next
+    }
+    in_contracts && $0 ~ ("^[[:space:]]{2}" target ":[[:space:]]*$") {
+      in_task = 1
+      in_field = 0
+      next
+    }
+    in_contracts && in_task && /^[[:space:]]{2}[a-zA-Z0-9_-]+:[[:space:]]*$/ {
+      in_task = 0
+      in_field = 0
+      next
+    }
+    in_task && $0 ~ ("^[[:space:]]{4}" field ":[[:space:]]*$") {
+      in_field = 1
+      next
+    }
+    in_task && in_field && /^[[:space:]]{6}-[[:space:]]*/ {
+      item = $0
+      sub(/^[[:space:]]{6}-[[:space:]]*/, "", item)
+      item = cleaned(item)
+      if (item != "") {
+        print item
+      }
+      next
+    }
+    in_task && in_field && /^[[:space:]]{4}[a-zA-Z0-9_-]+:[[:space:]]*/ {
+      in_field = 0
+      next
+    }
+  ' "$contracts_file"
+}
+
+output_contract_get_scalar() {
+  local contracts_file="$1"
+  local task_name="$2"
+  local field_name="$3"
+  registry_require_file "$contracts_file"
+  awk -v target="$task_name" -v field="$field_name" '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*contracts:[[:space:]]*$/ {
+      in_contracts = 1
+      next
+    }
+    in_contracts && $0 ~ ("^[[:space:]]{2}" target ":[[:space:]]*$") {
+      in_task = 1
+      next
+    }
+    in_contracts && in_task && /^[[:space:]]{2}[a-zA-Z0-9_-]+:[[:space:]]*$/ {
+      in_task = 0
+      next
+    }
+    in_task && $0 ~ ("^[[:space:]]{4}" field ":[[:space:]]*") {
+      v = $0
+      sub("^[[:space:]]{4}" field ":[[:space:]]*", "", v)
+      v = cleaned(v)
+      print v
+      exit
+    }
+  ' "$contracts_file"
+}
+
+recovery_policy_get_retry_policy() {
+  local policy_file="$1"
+  local task_name="$2"
+  registry_require_file "$policy_file"
+  awk -v target="$task_name" '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*policies:[[:space:]]*$/ {
+      in_policies = 1
+      next
+    }
+    in_policies && $0 ~ ("^[[:space:]]{2}" target ":[[:space:]]*$") {
+      in_task = 1
+      next
+    }
+    in_policies && in_task && /^[[:space:]]{2}[a-zA-Z0-9_-]+:[[:space:]]*$/ {
+      in_task = 0
+      next
+    }
+    in_task && /^[[:space:]]{4}retry_policy:[[:space:]]*/ {
+      v = $0
+      sub(/^[[:space:]]{4}retry_policy:[[:space:]]*/, "", v)
+      print cleaned(v)
+      exit
+    }
+  ' "$policy_file"
+}
+
+recovery_policy_list_fallback_skills() {
+  local policy_file="$1"
+  local task_name="$2"
+  registry_require_file "$policy_file"
+  awk -v target="$task_name" '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*policies:[[:space:]]*$/ {
+      in_policies = 1
+      next
+    }
+    in_policies && $0 ~ ("^[[:space:]]{2}" target ":[[:space:]]*$") {
+      in_task = 1
+      in_fallback = 0
+      next
+    }
+    in_policies && in_task && /^[[:space:]]{2}[a-zA-Z0-9_-]+:[[:space:]]*$/ {
+      in_task = 0
+      in_fallback = 0
+      next
+    }
+    in_task && /^[[:space:]]{4}fallback_skills:[[:space:]]*$/ {
+      in_fallback = 1
+      next
+    }
+    in_task && in_fallback && /^[[:space:]]{6}-[[:space:]]*/ {
+      item = $0
+      sub(/^[[:space:]]{6}-[[:space:]]*/, "", item)
+      item = cleaned(item)
+      if (item != "") {
+        print item
+      }
+      next
+    }
+    in_task && in_fallback && /^[[:space:]]{4}[a-zA-Z0-9_-]+:[[:space:]]*/ {
+      in_fallback = 0
+      next
+    }
+  ' "$policy_file"
 }

@@ -1,0 +1,23 @@
+schema_version: 1
+updated_at: "2026-03-27"
+cases:
+  - id: task_success_001
+    query: "Need variant-effect guidance for hg38 chr12 REF ALT with output summary."
+    task: variant-effect
+    min_runnable_steps: 1
+    min_expected_outputs: 1
+  - id: task_success_002
+    query: "Need embedding plan for sequence interval and pooled representation."
+    task: embedding
+    min_runnable_steps: 1
+    min_expected_outputs: 1
+  - id: task_success_003
+    query: "Need fine-tuning workflow for CSV labels and compute budget."
+    task: fine-tuning
+    min_runnable_steps: 1
+    min_expected_outputs: 1
+  - id: task_success_004
+    query: "Need track-prediction plan for human hg38 interval and head output."
+    task: track-prediction
+    min_runnable_steps: 1
+    min_expected_outputs: 1

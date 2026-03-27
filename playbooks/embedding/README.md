@@ -45,3 +45,11 @@ A valid answer should include:
 2. token and length expectations
 3. runnable minimal code
 4. constraints and troubleshooting notes
+
+## Minimal Repro Example
+
+```bash
+bash scripts/run_agent.sh \
+  --task embedding \
+  --query "Need embedding plan for sequence interval and pooled representation."
+```

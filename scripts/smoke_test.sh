@@ -15,6 +15,7 @@ look correct on a target machine.
 
 Options:
   --registry FILE         Skill registry file. Default: <repo>/registry/skills.yaml
+  --include-disabled      Include disabled skills from registry.
   --skills-dir DIR         Check linked/copied skills in this Codex skills directory.
   --alphagenome-python P   Run AlphaGenome import checks with this Python executable.
   --gpn-python P           Run GPN import checks with this Python executable.
@@ -32,7 +33,7 @@ load_registry_skills() {
     if [[ -n "$skill_id" ]]; then
       SKILL_IDS+=("$skill_id")
     fi
-  done < <(registry_list_ids "$registry_file")
+  done < <(registry_list_ids_filtered "$registry_file" "$include_disabled")
 
   if [[ ${#SKILL_IDS[@]} -eq 0 ]]; then
     echo "error: no skills found in registry file: $registry_file" >&2
@@ -42,6 +43,7 @@ load_registry_skills() {
 
 skills_dir=""
 registry_file="$DEFAULT_REGISTRY_FILE"
+include_disabled=0
 alphagenome_python=""
 gpn_python=""
 nt_python=""
@@ -58,6 +60,10 @@ while [[ $# -gt 0 ]]; do
     --skills-dir)
       skills_dir="$2"
       shift 2
+      ;;
+    --include-disabled)
+      include_disabled=1
+      shift
       ;;
     --alphagenome-python)
       alphagenome_python="$2"
@@ -148,23 +154,33 @@ check_exists "$registry_file" "skill registry"
 check_exists "$REPO_ROOT/registry/tags.yaml" "tag registry"
 check_exists "$REPO_ROOT/registry/routing.yaml" "routing config"
 check_exists "$REPO_ROOT/registry/task_contracts.yaml" "task contracts"
+check_exists "$REPO_ROOT/registry/output_contracts.yaml" "output contracts"
+check_exists "$REPO_ROOT/registry/recovery_policies.yaml" "recovery policies"
 check_exists "$REPO_ROOT/playbooks/variant-effect/README.md" "variant-effect playbook"
 check_exists "$REPO_ROOT/playbooks/embedding/README.md" "embedding playbook"
 check_exists "$REPO_ROOT/playbooks/fine-tuning/README.md" "fine-tuning playbook"
 check_exists "$REPO_ROOT/playbooks/track-prediction/README.md" "track-prediction playbook"
 check_exists "$REPO_ROOT/playbooks/environment-setup/README.md" "environment-setup playbook"
 check_exists "$REPO_ROOT/evals/routing/cases.yaml" "routing eval cases"
+check_exists "$REPO_ROOT/evals/groundedness/cases.yaml" "groundedness eval cases"
+check_exists "$REPO_ROOT/evals/task_success/cases.yaml" "task-success eval cases"
 check_exists "$REPO_ROOT/scripts/link_skills.sh" "link_skills.sh"
 check_exists "$REPO_ROOT/scripts/bootstrap.sh" "bootstrap.sh"
 check_exists "$REPO_ROOT/scripts/provision_stack.sh" "provision_stack.sh"
+check_exists "$REPO_ROOT/scripts/prefetch_models.sh" "prefetch_models.sh"
+check_exists "$REPO_ROOT/scripts/clean_runtime.sh" "clean_runtime.sh"
 check_exists "$REPO_ROOT/scripts/smoke_test.sh" "smoke_test.sh"
 check_exists "$REPO_ROOT/scripts/lib_registry.sh" "registry helper library"
 check_exists "$REPO_ROOT/scripts/validate_registry.sh" "validate_registry.sh"
+check_exists "$REPO_ROOT/scripts/validate_registry_tracking.sh" "validate_registry_tracking.sh"
 check_exists "$REPO_ROOT/scripts/validate_skill_metadata.sh" "validate_skill_metadata.sh"
 check_exists "$REPO_ROOT/scripts/validate_routing.sh" "validate_routing.sh"
+check_exists "$REPO_ROOT/scripts/validate_groundedness.sh" "validate_groundedness.sh"
+check_exists "$REPO_ROOT/scripts/validate_task_success.sh" "validate_task_success.sh"
 check_exists "$REPO_ROOT/scripts/validate_migration_paths.sh" "validate_migration_paths.sh"
 check_exists "$REPO_ROOT/scripts/route_query.sh" "route_query.sh"
 check_exists "$REPO_ROOT/scripts/run_agent.sh" "run_agent.sh"
+check_exists "$REPO_ROOT/scripts/execute_plan.sh" "execute_plan.sh"
 check_exists "$REPO_ROOT/scripts/agent_console.sh" "agent_console.sh"
 check_exists "$(skill_file_path dnabert2 scripts/validate_dataset_csv.py)" "DNABERT2 dataset validator"
 check_exists "$(skill_file_path dnabert2 scripts/recommend_max_length.py)" "DNABERT2 max-length helper"
@@ -231,7 +247,12 @@ else
   failures=$((failures + 1))
 fi
 
-route_output="$(bash "$REPO_ROOT/scripts/route_query.sh" --query "Use \$dnabert2 to validate my CSV schema." || true)"
+route_cmd=(bash "$REPO_ROOT/scripts/route_query.sh")
+if [[ "$include_disabled" -eq 1 ]]; then
+  route_cmd+=(--include-disabled)
+fi
+
+route_output="$("${route_cmd[@]}" --query "Use \$dnabert2 to validate my CSV schema." || true)"
 if printf '%s\n' "$route_output" | grep -q '^primary: dnabert2 '; then
   echo "ok: route query primary selection"
 else
@@ -239,7 +260,7 @@ else
   failures=$((failures + 1))
 fi
 
-route_clarify_output="$(bash "$REPO_ROOT/scripts/route_query.sh" --query "Train a model on fasta labels." || true)"
+route_clarify_output="$("${route_cmd[@]}" --query "Train a model on fasta labels." || true)"
 if printf '%s\n' "$route_clarify_output" | grep -q '^decision: clarify$'; then
   echo "ok: route query clarify behavior"
 else
@@ -247,17 +268,49 @@ else
   failures=$((failures + 1))
 fi
 
-if bash "$REPO_ROOT/scripts/validate_routing.sh" >/dev/null; then
+if [[ "$include_disabled" -eq 0 ]]; then
+  route_disabled_output="$("${route_cmd[@]}" --query "Please help me run legacy Torch7 Basset prediction." || true)"
+  if printf '%s\n' "$route_disabled_output" | grep -q '^decision: clarify$'; then
+    echo "ok: disabled skill is not routed by default"
+  else
+    echo "fail: disabled skill should not be routed by default" >&2
+    failures=$((failures + 1))
+  fi
+fi
+
+validate_routing_cmd=(bash "$REPO_ROOT/scripts/validate_routing.sh")
+if [[ "$include_disabled" -eq 1 ]]; then
+  validate_routing_cmd+=(--include-disabled)
+fi
+
+if "${validate_routing_cmd[@]}" >/dev/null; then
   echo "ok: validate routing eval"
 else
   echo "fail: validate routing eval" >&2
   failures=$((failures + 1))
 fi
 
-if bash "$REPO_ROOT/scripts/validate_skill_metadata.sh" >/dev/null; then
+validate_metadata_cmd=(bash "$REPO_ROOT/scripts/validate_skill_metadata.sh")
+if [[ "$include_disabled" -eq 1 ]]; then
+  validate_metadata_cmd+=(--include-disabled)
+fi
+
+if "${validate_metadata_cmd[@]}" >/dev/null; then
   echo "ok: validate skill metadata"
 else
   echo "fail: validate skill metadata" >&2
+  failures=$((failures + 1))
+fi
+
+validate_tracking_cmd=(bash "$REPO_ROOT/scripts/validate_registry_tracking.sh")
+if [[ "$include_disabled" -eq 1 ]]; then
+  validate_tracking_cmd+=(--include-disabled)
+fi
+
+if "${validate_tracking_cmd[@]}" >/dev/null; then
+  echo "ok: validate registry tracking"
+else
+  echo "fail: validate registry tracking" >&2
   failures=$((failures + 1))
 fi
 
@@ -268,7 +321,26 @@ else
   failures=$((failures + 1))
 fi
 
-agent_output="$(bash "$REPO_ROOT/scripts/run_agent.sh" --query "Need NTv3 track prediction on hg38 human interval" || true)"
+if bash "$REPO_ROOT/scripts/validate_groundedness.sh" >/dev/null; then
+  echo "ok: validate groundedness eval"
+else
+  echo "fail: validate groundedness eval" >&2
+  failures=$((failures + 1))
+fi
+
+if bash "$REPO_ROOT/scripts/validate_task_success.sh" >/dev/null; then
+  echo "ok: validate task-success eval"
+else
+  echo "fail: validate task-success eval" >&2
+  failures=$((failures + 1))
+fi
+
+run_agent_cmd=(bash "$REPO_ROOT/scripts/run_agent.sh")
+if [[ "$include_disabled" -eq 1 ]]; then
+  run_agent_cmd+=(--include-disabled)
+fi
+
+agent_output="$("${run_agent_cmd[@]}" --query "Need NTv3 track prediction on hg38 human interval" || true)"
 if printf '%s\n' "$agent_output" | grep -q '^primary_skill: nucleotide-transformer-v3$'; then
   echo "ok: run agent primary selection"
 else

@@ -5,7 +5,7 @@ path: skills/evo2-inference
 status: active
 family: genome-language-model-inference
 tasks:
-  - setup
+  - environment-setup
   - forward
   - embedding
   - generation
@@ -31,6 +31,25 @@ constraints:
 tools:
   - scripts/run_hosted_api.py
   - scripts/run_real_evo2_workflow.py
+tool_contracts:
+  - tool: scripts/run_hosted_api.py
+    inputs:
+      - nvcf-key-and-generation-args
+    outputs:
+      - generation-response-json
+    side_effects:
+      - network-calls-to-hosted-api
+    failure_codes:
+      - 1
+  - tool: scripts/run_real_evo2_workflow.py
+    inputs:
+      - interval-and-variant-workflow-args
+    outputs:
+      - plots-and-run-summary-json
+    side_effects:
+      - writes-results-files
+    failure_codes:
+      - 1
 priority_rules:
   - prefer-when-user-explicitly-mentions-evo2
   - prefer-when-task-needs-hosted-generation-or-hardware-aware-checkpoint-choice

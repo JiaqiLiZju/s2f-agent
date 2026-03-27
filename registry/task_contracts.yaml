@@ -1,5 +1,8 @@
 schema_version: 1
-updated_at: "2026-03-26"
+updated_at: "2026-03-27"
+task_aliases:
+  setup: environment-setup
+  general-troubleshooting: troubleshooting
 contracts:
   environment-setup:
     required_inputs:
@@ -30,11 +33,6 @@ contracts:
     required_inputs:
       - failing-step-or-error
       - runtime-context
-  setup:
-    required_inputs:
-      - target-stack-or-model-family
-      - runtime-context
-      - hardware-context
   loading:
     required_inputs:
       - model-family-objective

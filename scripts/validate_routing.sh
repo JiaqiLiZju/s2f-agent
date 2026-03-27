@@ -21,6 +21,7 @@ Options:
   --routing-config FILE  Routing config file. Default: <repo>/registry/routing.yaml
   --cases FILE           Routing eval case file. Default: <repo>/evals/routing/cases.yaml
   --router FILE          Router script path. Default: <repo>/scripts/route_query.sh
+  --include-disabled     Include disabled skills from registry.
   -h, --help             Show this help message.
 EOF_USAGE
 }
@@ -30,6 +31,7 @@ tags_file="$DEFAULT_TAGS_FILE"
 routing_file="$DEFAULT_ROUTING_FILE"
 cases_file="$DEFAULT_CASES_FILE"
 router_script="$DEFAULT_ROUTER_SCRIPT"
+include_disabled=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -52,6 +54,10 @@ while [[ $# -gt 0 ]]; do
     --router)
       router_script="$2"
       shift 2
+      ;;
+    --include-disabled)
+      include_disabled=1
+      shift
       ;;
     -h|--help)
       usage
@@ -269,7 +275,7 @@ to_lower() {
 num_skills=0
 while IFS= read -r _sid; do
   [[ -n "$_sid" ]] && num_skills=$((num_skills + 1))
-done < <(registry_list_ids "$registry_file")
+done < <(registry_list_ids_filtered "$registry_file" "$include_disabled")
 
 if [[ "$num_skills" -eq 0 ]]; then
   echo "error: no skills found in registry: $registry_file" >&2
@@ -297,6 +303,9 @@ while IFS=$'\x1f' read -r case_id query expected_primary expected_secondary task
     --query "$query" \
     --top-k "$num_skills" \
     --format json)
+  if [[ "$include_disabled" -eq 1 ]]; then
+    router_cmd+=(--include-disabled)
+  fi
   if [[ -n "$task_name" ]]; then
     router_cmd+=(--task "$task_name")
   fi

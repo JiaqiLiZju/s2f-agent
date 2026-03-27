@@ -1,0 +1,23 @@
+schema_version: 1
+updated_at: "2026-03-27"
+policies:
+  variant-effect:
+    retry_policy: clarify-missing-inputs-then-retry-once
+    fallback_skills:
+      - borzoi-workflows
+      - gpn-models
+      - evo2-inference
+  embedding:
+    retry_policy: clarify-embedding-target-then-retry-once
+    fallback_skills:
+      - nucleotide-transformer-v3
+      - evo2-inference
+  fine-tuning:
+    retry_policy: clarify-dataset-schema-then-retry-once
+    fallback_skills:
+      - dnabert2
+  track-prediction:
+    retry_policy: clarify-output-head-then-retry-once
+    fallback_skills:
+      - borzoi-workflows
+      - segment-nt

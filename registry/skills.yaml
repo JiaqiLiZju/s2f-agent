@@ -16,7 +16,7 @@ skills:
       - predict_variant
   - id: basset-workflows
     path: skills-dev/basset-workflows
-    enabled: true
+    enabled: false
     family: legacy-cnn-regulatory
     tasks:
       - preprocessing
@@ -29,7 +29,7 @@ skills:
       - sad
   - id: bpnet
     path: skills-dev/bpnet
-    enabled: true
+    enabled: false
     family: profile-prediction-and-attribution
     tasks:
       - preprocessing
@@ -45,7 +45,7 @@ skills:
     enabled: true
     family: sequence-to-signal
     tasks:
-      - setup
+      - environment-setup
       - track-prediction
       - variant-effect
       - interpretation
@@ -73,7 +73,7 @@ skills:
     enabled: true
     family: genome-language-model-inference
     tasks:
-      - setup
+      - environment-setup
       - forward
       - embedding
       - generation
@@ -97,10 +97,10 @@ skills:
       - gpn-star
   - id: nucleotide-transformer
     path: skills-dev/nucleotide-transformer
-    enabled: true
+    enabled: false
     family: jax-haiku-transformers
     tasks:
-      - setup
+      - environment-setup
       - tokenization
       - embedding
       - attention-analysis
@@ -113,7 +113,7 @@ skills:
     enabled: true
     family: transformers-ntv3
     tasks:
-      - setup
+      - environment-setup
       - embedding
       - track-prediction
       - troubleshooting
@@ -136,7 +136,7 @@ skills:
       - segmentborzoi
   - id: skill-factory
     path: skills-dev/skill-factory
-    enabled: true
+    enabled: false
     family: skilling-and-scaffolding
     tasks:
       - skill-scaffold

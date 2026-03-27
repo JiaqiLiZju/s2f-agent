@@ -27,6 +27,34 @@ tools:
   - scripts/validate_dataset_csv.py
   - scripts/recommend_max_length.py
   - scripts/embed_interval_plot.py
+tool_contracts:
+  - tool: scripts/validate_dataset_csv.py
+    inputs:
+      - data-dir-or-csv
+    outputs:
+      - validation-summary-json
+    side_effects:
+      - none
+    failure_codes:
+      - 1
+  - tool: scripts/recommend_max_length.py
+    inputs:
+      - sequence-length-or-csv
+    outputs:
+      - recommended-model-max-length
+    side_effects:
+      - none
+    failure_codes:
+      - 1
+  - tool: scripts/embed_interval_plot.py
+    inputs:
+      - sequence-or-interval
+    outputs:
+      - embedding-plot-and-metadata
+    side_effects:
+      - writes-output-artifacts
+    failure_codes:
+      - 1
 priority_rules:
   - prefer-when-user-explicitly-mentions-dnabert2
   - prefer-when-task-is-dna-csv-validation-or-dnabert2-finetuning

@@ -13,7 +13,12 @@ Classify the user request into one primary task:
 - `variant-effect`
 - `fine-tuning`
 - `track-prediction`
-- `general-troubleshooting`
+- `troubleshooting`
+
+Notes:
+
+- `setup` is treated as an alias of `environment-setup`.
+- `general-troubleshooting` is treated as an alias of `troubleshooting`.
 
 If multiple tasks appear, keep one primary task and mark others as secondary.
 
@@ -39,6 +44,7 @@ Required inputs by task:
 - `variant-effect`: assembly + coordinate + allele or interval spec + selected modality
 - `fine-tuning`: dataset schema + target label task + compute constraints
 - `track-prediction`: species + assembly + interval + model/head choice
+- `troubleshooting`: failing step or error + runtime context
 
 If a required input is missing and risky to infer, ask a focused question. Otherwise continue with explicit assumptions.
 
@@ -81,4 +87,4 @@ Answer format:
 - `variant-effect` -> `alphagenome-api`, `borzoi-workflows`, `gpn-models`, `evo2-inference`
 - `fine-tuning` -> `dnabert2`, `bpnet`, `basset-workflows`
 - `track-prediction` -> `nucleotide-transformer-v3`, `segment-nt`, `borzoi-workflows`
-- `general-troubleshooting` -> pick the skill that owns the failing stack or model family
+- `troubleshooting` -> pick the skill that owns the failing stack or model family

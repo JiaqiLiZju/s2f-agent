@@ -28,6 +28,16 @@ constraints:
   - verify-schema-for-gpn-ss-commands
 tools:
   - references/predict_variant_single_site.py
+tool_contracts:
+  - tool: references/predict_variant_single_site.py
+    inputs:
+      - assembly-and-single-variant-spec
+    outputs:
+      - variant-llr-json
+    side_effects:
+      - writes-local-json-output
+    failure_codes:
+      - 1
 priority_rules:
   - prefer-when-user-explicitly-mentions-gpn-family-models
   - prefer-when-task-is-family-selection-or-gpn-variant-scoring

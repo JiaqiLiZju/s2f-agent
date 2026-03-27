@@ -15,12 +15,14 @@ Validate skill-level metadata completeness and consistency with registry entries
 Options:
   --registry FILE    Skill registry file. Default: <repo>/registry/skills.yaml
   --tags FILE        Task tag registry file. Default: <repo>/registry/tags.yaml
+  --include-disabled Include disabled skills from registry.
   -h, --help         Show this help message.
 EOF
 }
 
 registry_file="$DEFAULT_REGISTRY_FILE"
 tags_file="$DEFAULT_TAGS_FILE"
+include_disabled=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -31,6 +33,10 @@ while [[ $# -gt 0 ]]; do
     --tags)
       tags_file="$2"
       shift 2
+      ;;
+    --include-disabled)
+      include_disabled=1
+      shift
       ;;
     -h|--help)
       usage
@@ -107,7 +113,7 @@ required_list_fields=(
   "priority_rules"
 )
 
-for skill_id in $(registry_list_ids "$registry_file"); do
+for skill_id in $(registry_list_ids_filtered "$registry_file" "$include_disabled"); do
   [[ -z "$skill_id" ]] && continue
   total=$((total + 1))
 
@@ -143,6 +149,20 @@ for skill_id in $(registry_list_ids "$registry_file"); do
       ok=0
     fi
   done
+
+  if ! grep -q '^tool_contracts:' "$skill_meta"; then
+    echo "fail: $skill_id missing 'tool_contracts' field in $skill_meta" >&2
+    failures=$((failures + 1))
+    ok=0
+  fi
+
+  tools_count="$(count_list_items "$skill_meta" "tools")"
+  tool_contracts_count="$(count_list_items "$skill_meta" "tool_contracts")"
+  if [[ "$tools_count" -gt 0 && "$tool_contracts_count" -le 0 ]]; then
+    echo "fail: $skill_id has tools but no tool_contracts entries in $skill_meta" >&2
+    failures=$((failures + 1))
+    ok=0
+  fi
 
   meta_id="$(yaml_get_scalar_field "$skill_meta" "id" || true)"
   meta_path="$(yaml_get_scalar_field "$skill_meta" "path" || true)"

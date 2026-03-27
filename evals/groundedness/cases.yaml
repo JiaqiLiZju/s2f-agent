@@ -1,0 +1,27 @@
+schema_version: 1
+updated_at: "2026-03-27"
+cases:
+  - id: grounded_001
+    query: "Help me run AlphaGenome predict_variant on hg38 with REF ALT."
+    task: variant-effect
+    expected_primary_skill: alphagenome-api
+    required_constraint_contains: grounded
+    forbidden_substring: unsupported_api_symbol
+  - id: grounded_002
+    query: "Need NTv3 track prediction for human hg38 interval and output head info."
+    task: track-prediction
+    expected_primary_skill: nucleotide-transformer-v3
+    required_constraint_contains: length
+    forbidden_substring: fabricate_output_head
+  - id: grounded_003
+    query: "Need DNABERT2 embedding workflow with sequence input and token-level output."
+    task: embedding
+    expected_primary_skill: dnabert2
+    required_constraint_contains: transformers
+    forbidden_substring: invented_cli_flag
+  - id: grounded_004
+    query: "Prepare fine-tuning plan from CSV labels with compute constraints."
+    task: fine-tuning
+    expected_primary_skill: dnabert2
+    required_constraint_contains: transformers
+    forbidden_substring: fake_dataset_field

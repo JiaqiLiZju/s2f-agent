@@ -14,17 +14,23 @@ with required files.
 
 Options:
   --registry FILE    Skill registry file. Default: <repo>/registry/skills.yaml
+  --include-disabled Include disabled skills from registry.
   -h, --help         Show this help message.
 EOF
 }
 
 registry_file="$DEFAULT_REGISTRY_FILE"
+include_disabled=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --registry)
       registry_file="$2"
       shift 2
+      ;;
+    --include-disabled)
+      include_disabled=1
+      shift
       ;;
     -h|--help)
       usage
@@ -69,7 +75,7 @@ while IFS= read -r skill_id; do
   fi
 
   echo "ok: $skill_id -> $skill_path"
-done < <(registry_list_ids "$registry_file")
+done < <(registry_list_ids_filtered "$registry_file" "$include_disabled")
 
 if [[ "$total" -eq 0 ]]; then
   echo "fail: no skills found in registry ($registry_file)" >&2

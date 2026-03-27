@@ -1,5 +1,5 @@
 schema_version: 1
-updated_at: "2026-03-26"
+updated_at: "2026-03-27"
 
 weight_explicit_skill_mention: 120
 weight_skill_id_mention: 80
@@ -29,6 +29,8 @@ task_alias_rules:
   - bootstrap=>environment-setup
   - environment=>environment-setup
   - troubleshoot=>troubleshooting
+  - general troubleshooting=>troubleshooting
+  - general-troubleshooting=>troubleshooting
   - troubleshooting=>troubleshooting
   - debug=>troubleshooting
   - error=>troubleshooting

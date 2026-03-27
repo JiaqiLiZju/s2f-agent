@@ -61,11 +61,6 @@ tags:
     - bpnet
   motif-analysis:
     - bpnet
-  setup:
-    - borzoi-workflows
-    - evo2-inference
-    - nucleotide-transformer
-    - nucleotide-transformer-v3
   structural-variant-analysis:
     - borzoi-workflows
   gue-evaluation:

@@ -32,6 +32,25 @@ constraints:
 tools:
   - scripts/compute_rescaling_factor.py
   - scripts/run_segment_nt_region.py
+tool_contracts:
+  - tool: scripts/compute_rescaling_factor.py
+    inputs:
+      - sequence-length-or-token-count
+    outputs:
+      - rescaling-factor-report
+    side_effects:
+      - none
+    failure_codes:
+      - 1
+  - tool: scripts/run_segment_nt_region.py
+    inputs:
+      - species-assembly-and-interval
+    outputs:
+      - track-plot-probabilities-and-metadata
+    side_effects:
+      - writes-output-artifacts
+    failure_codes:
+      - 1
 priority_rules:
   - prefer-when-user-explicitly-mentions-segmentnt-family
   - prefer-when-task-needs-segmentation-or-rescaling-factor-calculation

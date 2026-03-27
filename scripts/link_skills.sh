@@ -17,6 +17,7 @@ Link or copy this repository's packaged skills into the Codex skills directory.
 Options:
   --skills-dir DIR   Destination skills directory.
   --registry FILE    Skill registry file. Default: <repo>/registry/skills.yaml
+  --include-disabled Include disabled skills from registry.
   --copy             Copy instead of symlink.
   --force            Replace an existing destination path.
   --list             Print the available skill IDs and exit.
@@ -32,7 +33,7 @@ load_available_skills() {
     if [[ -n "$skill_id" ]]; then
       AVAILABLE_SKILLS+=("$skill_id")
     fi
-  done < <(registry_list_ids "$registry_file")
+  done < <(registry_list_ids_filtered "$registry_file" "$include_disabled")
 
   if [[ ${#AVAILABLE_SKILLS[@]} -eq 0 ]]; then
     echo "error: no skills found in registry file: $registry_file" >&2
@@ -47,6 +48,7 @@ print_available() {
 
 copy_mode=0
 force_mode=0
+include_disabled=0
 skills_dir="$DEFAULT_SKILLS_DIR"
 registry_file="$DEFAULT_REGISTRY_FILE"
 selected=()
@@ -60,6 +62,10 @@ while [[ $# -gt 0 ]]; do
     --registry)
       registry_file="$2"
       shift 2
+      ;;
+    --include-disabled)
+      include_disabled=1
+      shift
       ;;
     --copy)
       copy_mode=1
@@ -101,9 +107,21 @@ resolve_skill_source() {
   printf '%s\n' "$REPO_ROOT/$skill_id"
 }
 
+skill_allowed_in_mode() {
+  local skill_id="$1"
+  if [[ "$include_disabled" -eq 1 ]]; then
+    return 0
+  fi
+  registry_skill_enabled "$registry_file" "$skill_id"
+}
+
 mkdir -p "$skills_dir"
 
 for skill in "${selected[@]}"; do
+  if ! skill_allowed_in_mode "$skill"; then
+    echo "error: skill '$skill' is disabled in registry (use --include-disabled to include it)" >&2
+    exit 1
+  fi
   src="$(resolve_skill_source "$skill")"
   dest="$skills_dir/$skill"
 

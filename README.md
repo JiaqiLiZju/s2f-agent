@@ -23,6 +23,23 @@ For a fresh-machine bootstrap (recommended):
 make bootstrap
 ```
 
+For one-time persistent setup (recommended for long-term reuse across sessions/repo updates):
+
+```bash
+./scripts/bootstrap.sh \
+  --persistent-root "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills" \
+  --prefetch-models
+
+# load the generated runtime env in new shells
+source "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills/env.sh"
+```
+
+Equivalent Make target:
+
+```bash
+make bootstrap-persistent PREFETCH_MODELS=1
+```
+
 ## Table of Contents
 
 - [Functional Capabilities](#functional-capabilities)
@@ -42,6 +59,8 @@ make bootstrap
 | Skill-grounded execution | Domain-specific guidance for genomics model families and workflows | `skills/*/SKILL.md`, `skills-dev/*/SKILL.md` |
 | Deterministic routing | Ranked skill selection with `route` / `clarify` decision and confidence | `scripts/route_query.sh`, `registry/routing.yaml` |
 | Task-contract checks | Detects missing required inputs before execution guidance | `scripts/run_agent.sh`, `registry/task_contracts.yaml` |
+| Plan standardization | Emits normalized task plans with runnable steps and expected outputs | `scripts/run_agent.sh`, `registry/output_contracts.yaml`, `registry/recovery_policies.yaml` |
+| Plan execution | Dry-run or execute generated steps and verify expected outputs | `scripts/execute_plan.sh` |
 | Cross-skill playbook mapping | Maps user intent to reusable task playbooks | `playbooks/*/README.md` |
 | Reproducible environment setup | Standardized stack provisioning and one-step bootstrap | `scripts/provision_stack.sh`, `scripts/bootstrap.sh`, `Makefile` |
 | Validation and regression checks | Registry, metadata, migration, and routing consistency checks | `scripts/validate_*.sh`, `make validate-agent` |
@@ -64,6 +83,7 @@ Status definition:
 
 - `Stable`: canonical package in `skills/<skill-id>/`
 - `Dev`: in-progress package in `skills-dev/<skill-id>/`
+- default routing/install/validation only include `enabled=true` skills in `registry/skills.yaml` (use `--include-disabled` to opt in)
 
 | Skill ID | Status | Path | Best for | Explicit invocation | Docs |
 | --- | --- | --- | --- | --- | --- |
@@ -86,11 +106,11 @@ Reference notes used during skill development are in [`Readme/`](./Readme/).
 ```text
 s2f-skills/
 ├── agent/                  # orchestrator identity, routing and safety policy
-├── registry/               # skills index, tags, routing config, task contracts
+├── registry/               # skills index, tags, routing/task/output/recovery contracts
 ├── skills/                 # canonical stable skill packages
 ├── skills-dev/             # in-progress skill packages
 ├── playbooks/              # task-level cross-skill guidance
-├── evals/                  # routing evaluation cases
+├── evals/                  # routing + groundedness + task-success evaluation cases
 ├── docs/                   # architecture and design notes
 ├── scripts/                # setup, routing, orchestration, validation tooling
 ├── Readme/                 # source notes and upstream references
@@ -107,6 +127,7 @@ Use the router when you only need skill selection and confidence:
 ./scripts/route_query.sh --query "Use \$dnabert2 to validate my train/dev/test CSV."
 ./scripts/route_query.sh --query "I need NTv3 track prediction for hg38." --format json
 ./scripts/route_query.sh --query "Train a model on fasta labels." --task fine-tuning
+./scripts/route_query.sh --include-disabled --query "Use \$skill-factory to scaffold a new skill"
 ```
 
 Use the full agent runtime when you also need required-input checks and playbook mapping:
@@ -114,6 +135,14 @@ Use the full agent runtime when you also need required-input checks and playbook
 ```bash
 ./scripts/run_agent.sh --query "Need variant-effect guidance around chr12 with REF/ALT."
 ./scripts/run_agent.sh --query "Help me run Evo2 generation without NVIDIA GPU" --format json
+./scripts/run_agent.sh --include-disabled --query "Use \$skill-factory to scaffold from spec"
+```
+
+Execute generated plan steps (dry-run by default):
+
+```bash
+./scripts/execute_plan.sh --query "Need track-prediction plan for human hg38 interval"
+./scripts/execute_plan.sh --query "Need track-prediction plan for human hg38 interval" --run
 ```
 
 Open the local interactive console:
@@ -128,6 +157,7 @@ Decision lifecycle per query:
 2. score and rank candidate skills
 3. emit `decision=route` or `decision=clarify` with confidence
 4. if routed, resolve required inputs from task contracts first, then skill contracts
+5. emit normalized `plan` object (`runnable_steps`, `expected_outputs`, `fallbacks`, `retry_policy`)
 
 ## Installation and Deployment
 
@@ -152,6 +182,12 @@ Install all registry-listed skills:
 ./scripts/link_skills.sh
 # or
 make link-skills
+```
+
+Include disabled dev skills explicitly:
+
+```bash
+./scripts/link_skills.sh --include-disabled
 ```
 
 Useful variants:
@@ -183,6 +219,20 @@ One-step default install (skills + `alphagenome` + `gpn` + `nt-jax` + smoke test
 make bootstrap
 ```
 
+One-time persistent install (keeps deploy envs and caches in a stable location):
+
+```bash
+./scripts/bootstrap.sh \
+  --persistent-root "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills" \
+  --prefetch-models
+```
+
+After first setup, load the generated env in new shells:
+
+```bash
+source "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills/env.sh"
+```
+
 Optional one-step variants:
 
 ```bash
@@ -199,6 +249,29 @@ make bootstrap-ntv3-hf
 make bootstrap-borzoi
 make bootstrap-evo2-light
 make bootstrap-evo2-full
+make bootstrap-persistent
+```
+
+Prefetch model parameters separately (if environments are already prepared):
+
+```bash
+make prefetch-models
+# or
+./scripts/prefetch_models.sh --deploy-root "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills/deploy"
+```
+
+One-click cleanup for configured environments and temporary files:
+
+```bash
+make clean-runtime
+# or
+./scripts/clean_runtime.sh --yes
+```
+
+Use dry-run first if you want to preview deletions:
+
+```bash
+./scripts/clean_runtime.sh --dry-run
 ```
 
 ### 3. Optional Evo 2 paths
@@ -251,6 +324,7 @@ Registry and metadata checks:
 
 ```bash
 ./scripts/validate_registry.sh
+./scripts/validate_registry_tracking.sh
 ./scripts/validate_skill_metadata.sh
 ./scripts/validate_migration_paths.sh
 ```
@@ -259,6 +333,8 @@ Routing checks and full validation bundle:
 
 ```bash
 ./scripts/validate_routing.sh
+./scripts/validate_groundedness.sh
+./scripts/validate_task_success.sh
 make validate-agent
 ```
 
@@ -266,11 +342,22 @@ Optional Make shortcuts:
 
 ```bash
 make validate-registry
+make validate-registry-tracking
 make validate-skill-metadata
 make validate-migration-paths
 make eval-routing
+make eval-groundedness
+make eval-task-success
+make smoke-lite
 make route-query QUERY='Need variant-effect guidance' TASK='variant-effect'
 make run-agent QUERY='Help me run AlphaGenome predict_variant with RNA output'
+make execute-plan QUERY='Need track-prediction plan for human hg38 interval' TASK='track-prediction'
+```
+
+CI workflow entry:
+
+```bash
+.github/workflows/agent-ci.yml
 ```
 
 Extended smoke test with explicit environment imports:

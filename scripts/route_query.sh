@@ -21,6 +21,7 @@ Options:
   --registry FILE        Skill registry file. Default: <repo>/registry/skills.yaml
   --tags FILE            Task tag registry file. Default: <repo>/registry/tags.yaml
   --routing-config FILE  Routing config file. Default: <repo>/registry/routing.yaml
+  --include-disabled     Include disabled skills in routing candidates.
   -h, --help             Show this help message.
 EOF_USAGE
 }
@@ -136,6 +137,14 @@ config_get_string() {
   fi
 }
 
+skill_available_for_routing() {
+  local skill_id="$1"
+  if [[ "$include_disabled" -eq 1 ]]; then
+    return 0
+  fi
+  registry_skill_enabled "$registry_file" "$skill_id"
+}
+
 skill_has_task_direct() {
   local skill_id="$1"
   local task_name="$2"
@@ -154,6 +163,9 @@ skill_in_task_tag() {
     return 1
   fi
   while IFS= read -r sid; do
+    if ! skill_available_for_routing "$sid"; then
+      continue
+    fi
     if [[ "$sid" == "$skill_id" ]]; then
       return 0
     fi
@@ -261,6 +273,42 @@ infer_task_from_alias_rules() {
   fi
 }
 
+canonicalize_task() {
+  local raw_task="$1"
+  local normalized
+  local rule
+  local phrase
+  local mapped
+
+  normalized="$(to_lower "$(trim_text "$raw_task")")"
+  if [[ -z "$normalized" ]]; then
+    printf '\n'
+    return 0
+  fi
+
+  while IFS= read -r rule; do
+    [[ -z "$rule" ]] && continue
+    if [[ "$rule" != *"=>"* ]]; then
+      continue
+    fi
+    phrase="${rule%%=>*}"
+    mapped="${rule#*=>}"
+    phrase="$(to_lower "$(trim_text "$phrase")")"
+    mapped="$(to_lower "$(trim_text "$mapped")")"
+    if [[ "$phrase" == "$normalized" ]]; then
+      printf '%s\n' "$mapped"
+      return 0
+    fi
+  done < <(yaml_get_list_field "$routing_file" "task_alias_rules")
+
+  if [[ "$normalized" == "general-troubleshooting" ]]; then
+    printf 'troubleshooting\n'
+    return 0
+  fi
+
+  printf '%s\n' "$normalized"
+}
+
 infer_task() {
   local query_lc="$1"
   local best_task=""
@@ -295,6 +343,9 @@ infer_task() {
 
     while IFS= read -r sid; do
       [[ -z "$sid" ]] && continue
+      if ! skill_available_for_routing "$sid"; then
+        continue
+      fi
       sid_lc="$(to_lower "$sid")"
       if contains_token "$query_lc" "$sid_lc"; then
         score=$((score + INFER_SKILL_MENTION_IN_TASK))
@@ -449,6 +500,7 @@ format="text"
 registry_file="$DEFAULT_REGISTRY_FILE"
 tags_file="$DEFAULT_TAGS_FILE"
 routing_file="$DEFAULT_ROUTING_FILE"
+include_disabled=0
 
 # Defaults before reading optional routing config overrides.
 WEIGHT_EXPLICIT_SKILL_MENTION=120
@@ -498,6 +550,10 @@ while [[ $# -gt 0 ]]; do
     --routing-config)
       routing_file="$2"
       shift 2
+      ;;
+    --include-disabled)
+      include_disabled=1
+      shift
       ;;
     -h|--help)
       usage
@@ -559,7 +615,7 @@ query_lc="$(to_lower "$query")"
 effective_task=""
 task_source="none"
 if [[ -n "$task" ]]; then
-  effective_task="$(to_lower "$task")"
+  effective_task="$(canonicalize_task "$task")"
   task_source="provided"
 else
   alias_task="$(infer_task_from_alias_rules "$query_lc" || true)"
@@ -578,7 +634,7 @@ fi
 skill_ids=()
 while IFS= read -r sid; do
   [[ -n "$sid" ]] && skill_ids+=("$sid")
-done < <(registry_list_ids "$registry_file")
+done < <(registry_list_ids_filtered "$registry_file" "$include_disabled")
 
 if [[ ${#skill_ids[@]} -eq 0 ]]; then
   echo "error: no skills found in registry: $registry_file" >&2
@@ -600,7 +656,15 @@ fi
 
 primary_from_tag_fallback=0
 if [[ -n "$effective_task" && "$primary_score" -le 0 ]]; then
-  fallback_primary="$(tag_registry_list_for_task "$tags_file" "$effective_task" | head -n 1 || true)"
+  fallback_primary=""
+  while IFS= read -r sid; do
+    [[ -z "$sid" ]] && continue
+    if ! skill_available_for_routing "$sid"; then
+      continue
+    fi
+    fallback_primary="$sid"
+    break
+  done < <(tag_registry_list_for_task "$tags_file" "$effective_task")
   if [[ -n "$fallback_primary" ]]; then
     primary_skill="$fallback_primary"
     primary_score=0
@@ -695,6 +759,9 @@ done <<<"$sorted_scores"
 if [[ "$secondary_limit" -gt 0 && -n "$effective_task" && "$(csv_count "$secondary_csv")" -lt "$secondary_limit" ]]; then
   while IFS= read -r sid; do
     [[ -z "$sid" ]] && continue
+    if ! skill_available_for_routing "$sid"; then
+      continue
+    fi
     if [[ "$sid" == "$primary_skill" ]] || in_csv_list "$sid" "$secondary_csv"; then
       continue
     fi

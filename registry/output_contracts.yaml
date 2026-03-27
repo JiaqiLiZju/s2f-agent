@@ -1,0 +1,59 @@
+schema_version: 1
+updated_at: "2026-03-27"
+contracts:
+  variant-effect:
+    assumptions:
+      - coordinate-convention-must-be-explicit
+      - ref-alt-interpretation-limited-to-selected-model
+    runnable_steps:
+      - bash scripts/run_agent.sh --task variant-effect --query {selected_skill}-variant-effect-workflow
+      - awk 'NR<=120{print}' playbooks/variant-effect/README.md
+    expected_outputs:
+      - plan-json:variant-effect
+      - expected-file:variant-effect-summary.tsv
+      - expected-plot:variant-effect-trackplot.png
+    fallbacks:
+      - ask-for-missing-variant-spec
+    retry_policy: clarify-then-single-retry
+  embedding:
+    assumptions:
+      - sequence-length-and-tokenization-must-match-model
+      - embedding-granularity-must-be-explicit
+    runnable_steps:
+      - bash scripts/run_agent.sh --task embedding --query {selected_skill}-embedding-workflow
+      - awk 'NR<=120{print}' playbooks/embedding/README.md
+    expected_outputs:
+      - plan-json:embedding
+      - expected-file:embedding-metadata.json
+      - expected-shape:embedding-shape.txt
+    fallbacks:
+      - switch-to-compatible-embedding-skill
+    retry_policy: clarify-then-single-retry
+  fine-tuning:
+    assumptions:
+      - dataset-schema-must-be-validated-before-training
+      - evaluation-artifacts-path-must-be-defined
+    runnable_steps:
+      - bash scripts/run_agent.sh --task fine-tuning --query {selected_skill}-fine-tuning-workflow
+      - awk 'NR<=120{print}' playbooks/fine-tuning/README.md
+    expected_outputs:
+      - plan-json:fine-tuning
+      - expected-file:train-command.sh
+      - expected-file:eval-metrics.json
+    fallbacks:
+      - reduce-scope-to-minimal-train-run
+    retry_policy: clarify-then-single-retry
+  track-prediction:
+    assumptions:
+      - species-and-assembly-must-be-provided
+      - output-head-definition-must-match-selected-model
+    runnable_steps:
+      - bash scripts/run_agent.sh --task track-prediction --query {selected_skill}-track-prediction-workflow
+      - awk 'NR<=120{print}' playbooks/track-prediction/README.md
+    expected_outputs:
+      - plan-json:track-prediction
+      - expected-file:track-prediction-metadata.json
+      - expected-plot:track-prediction.png
+    fallbacks:
+      - fallback-to-secondary-track-skill
+    retry_policy: clarify-then-single-retry

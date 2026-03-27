@@ -25,6 +25,7 @@ constraints:
   - keep-interval-at-or-below-1Mbp
   - use-grounded-API-surface-only
 tools: []
+tool_contracts: []
 priority_rules:
   - prefer-when-user-explicitly-mentions-alphagenome
   - prefer-when-task-is-single-variant-effect-with-api-workflow

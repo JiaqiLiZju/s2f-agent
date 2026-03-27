@@ -38,3 +38,11 @@ A valid answer should include:
 2. required dataset fields and assumptions
 3. minimal runnable training command chain
 4. expected outputs and troubleshooting caveats
+
+## Minimal Repro Example
+
+```bash
+bash scripts/run_agent.sh \
+  --task fine-tuning \
+  --query "Need fine-tuning workflow for CSV labels and compute budget."
+```

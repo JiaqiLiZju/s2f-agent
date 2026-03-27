@@ -5,7 +5,7 @@ path: skills/borzoi-workflows
 status: active
 family: sequence-to-signal
 tasks:
-  - setup
+  - environment-setup
   - training
   - variant-effect
   - interpretation
@@ -28,6 +28,7 @@ constraints:
   - latest-tutorials-preferred-over-legacy
   - route-segmentborzoi-api-requests-to-segment-nt
 tools: []
+tool_contracts: []
 priority_rules:
   - prefer-when-user-explicitly-mentions-borzoi-or-calico-tutorials
   - prefer-when-task-is-borzoi-variant-scoring-or-sequence-interpretation

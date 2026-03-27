@@ -6,6 +6,8 @@ DEFAULT_REGISTRY_FILE="$REPO_ROOT/registry/skills.yaml"
 DEFAULT_TAGS_FILE="$REPO_ROOT/registry/tags.yaml"
 DEFAULT_ROUTING_FILE="$REPO_ROOT/registry/routing.yaml"
 DEFAULT_CONTRACTS_FILE="$REPO_ROOT/registry/task_contracts.yaml"
+DEFAULT_OUTPUT_CONTRACTS_FILE="$REPO_ROOT/registry/output_contracts.yaml"
+DEFAULT_RECOVERY_POLICIES_FILE="$REPO_ROOT/registry/recovery_policies.yaml"
 DEFAULT_ROUTER_SCRIPT="$REPO_ROOT/scripts/route_query.sh"
 source "$REPO_ROOT/scripts/lib_registry.sh"
 
@@ -28,7 +30,10 @@ Options:
   --tags FILE            Task tag registry file. Default: <repo>/registry/tags.yaml
   --routing-config FILE  Routing config for router. Default: <repo>/registry/routing.yaml
   --contracts FILE       Task contracts file. Default: <repo>/registry/task_contracts.yaml
+  --output-contracts FILE Output contracts file. Default: <repo>/registry/output_contracts.yaml
+  --recovery FILE        Recovery policy file. Default: <repo>/registry/recovery_policies.yaml
   --router FILE          Router script path. Default: <repo>/scripts/route_query.sh
+  --include-disabled     Include disabled skills in routing candidates.
   -h, --help             Show this help message.
 EOF_USAGE
 }
@@ -117,6 +122,106 @@ emit_json_array_from_csv() {
   printf ']'
 }
 
+emit_text_plan_block() {
+  local plan_task="$1"
+  local selected_skill="$2"
+  local assumptions_csv="$3"
+  local required_csv="$4"
+  local missing_csv="$5"
+  local constraints_csv="$6"
+  local steps_csv="$7"
+  local outputs_csv="$8"
+  local fallbacks_csv="$9"
+  local retry_policy="${10:-none}"
+
+  echo "plan:"
+  echo "  task: $plan_task"
+  echo "  selected_skill: $selected_skill"
+  echo "  assumptions:"
+  if [[ -n "$assumptions_csv" ]]; then
+    csv_to_lines_prefixed "$assumptions_csv" "    - "
+  else
+    echo "    - none"
+  fi
+  echo "  required_inputs:"
+  if [[ -n "$required_csv" ]]; then
+    csv_to_lines_prefixed "$required_csv" "    - "
+  else
+    echo "    - none"
+  fi
+  echo "  missing_inputs:"
+  if [[ -n "$missing_csv" ]]; then
+    csv_to_lines_prefixed "$missing_csv" "    - "
+  else
+    echo "    - none"
+  fi
+  echo "  constraints:"
+  if [[ -n "$constraints_csv" ]]; then
+    csv_to_lines_prefixed "$constraints_csv" "    - "
+  else
+    echo "    - none"
+  fi
+  echo "  runnable_steps:"
+  if [[ -n "$steps_csv" ]]; then
+    csv_to_lines_prefixed "$steps_csv" "    - "
+  else
+    echo "    - none"
+  fi
+  echo "  expected_outputs:"
+  if [[ -n "$outputs_csv" ]]; then
+    csv_to_lines_prefixed "$outputs_csv" "    - "
+  else
+    echo "    - none"
+  fi
+  echo "  fallbacks:"
+  if [[ -n "$fallbacks_csv" ]]; then
+    csv_to_lines_prefixed "$fallbacks_csv" "    - "
+  else
+    echo "    - none"
+  fi
+  echo "  retry_policy: ${retry_policy:-none}"
+}
+
+emit_json_plan_object() {
+  local plan_task="$1"
+  local selected_skill="$2"
+  local assumptions_csv="$3"
+  local required_csv="$4"
+  local missing_csv="$5"
+  local constraints_csv="$6"
+  local steps_csv="$7"
+  local outputs_csv="$8"
+  local fallbacks_csv="$9"
+  local retry_policy="${10:-none}"
+
+  printf '{'
+  printf '"task":"%s",' "$(json_escape "$plan_task")"
+  printf '"selected_skill":"%s",' "$(json_escape "$selected_skill")"
+  printf '"assumptions":'
+  emit_json_array_from_csv "$assumptions_csv"
+  printf ','
+  printf '"required_inputs":'
+  emit_json_array_from_csv "$required_csv"
+  printf ','
+  printf '"missing_inputs":'
+  emit_json_array_from_csv "$missing_csv"
+  printf ','
+  printf '"constraints":'
+  emit_json_array_from_csv "$constraints_csv"
+  printf ','
+  printf '"runnable_steps":'
+  emit_json_array_from_csv "$steps_csv"
+  printf ','
+  printf '"expected_outputs":'
+  emit_json_array_from_csv "$outputs_csv"
+  printf ','
+  printf '"fallbacks":'
+  emit_json_array_from_csv "$fallbacks_csv"
+  printf ','
+  printf '"retry_policy":"%s"' "$(json_escape "${retry_policy:-none}")"
+  printf '}'
+}
+
 json_escape() {
   printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
 }
@@ -178,6 +283,16 @@ extract_secondary_csv_from_json() {
     csv="$(append_csv "$csv" "$skill")"
   done < <(printf '%s\n' "$json" | grep -o '"skill":"[^"]*"' | sed 's/"skill":"//; s/"$//')
   printf '%s\n' "$csv"
+}
+
+render_plan_value() {
+  local raw="$1"
+  local plan_task="$2"
+  local selected_skill="$3"
+  local rendered="$raw"
+  rendered="${rendered//\{task\}/$plan_task}"
+  rendered="${rendered//\{selected_skill\}/$selected_skill}"
+  printf '%s\n' "$rendered"
 }
 
 input_satisfied() {
@@ -288,7 +403,10 @@ registry_file="$DEFAULT_REGISTRY_FILE"
 tags_file="$DEFAULT_TAGS_FILE"
 routing_file="$DEFAULT_ROUTING_FILE"
 contracts_file="$DEFAULT_CONTRACTS_FILE"
+output_contracts_file="$DEFAULT_OUTPUT_CONTRACTS_FILE"
+recovery_policies_file="$DEFAULT_RECOVERY_POLICIES_FILE"
 router_script="$DEFAULT_ROUTER_SCRIPT"
+include_disabled=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -324,9 +442,21 @@ while [[ $# -gt 0 ]]; do
       contracts_file="$2"
       shift 2
       ;;
+    --output-contracts)
+      output_contracts_file="$2"
+      shift 2
+      ;;
+    --recovery)
+      recovery_policies_file="$2"
+      shift 2
+      ;;
     --router)
       router_script="$2"
       shift 2
+      ;;
+    --include-disabled)
+      include_disabled=1
+      shift
       ;;
     -h|--help)
       usage
@@ -364,6 +494,8 @@ registry_require_file "$registry_file"
 registry_require_file "$tags_file"
 registry_require_file "$routing_file"
 registry_require_file "$contracts_file"
+registry_require_file "$output_contracts_file"
+registry_require_file "$recovery_policies_file"
 if [[ ! -f "$router_script" ]]; then
   echo "error: router script not found: $router_script" >&2
   exit 1
@@ -373,6 +505,9 @@ router_json=""
 router_cmd=(bash "$router_script" --registry "$registry_file" --tags "$tags_file" --routing-config "$routing_file" --query "$query" --top-k "$top_k" --format json)
 if [[ -n "$task" ]]; then
   router_cmd+=(--task "$task")
+fi
+if [[ "$include_disabled" -eq 1 ]]; then
+  router_cmd+=(--include-disabled)
 fi
 
 if ! router_json="$("${router_cmd[@]}" 2>&1)"; then
@@ -403,6 +538,7 @@ if [[ "$decision" == "clarify" ]]; then
     echo "decision: clarify"
     echo "confidence: ${confidence_level:-unknown} (${confidence_score:-0})"
     echo "clarify_question: ${clarify_question:-Please specify task or preferred skill.}"
+    echo "plan: none"
     exit 0
   fi
 
@@ -436,6 +572,7 @@ if [[ "$decision" == "clarify" ]]; then
   printf '"missing_inputs":[],'
   printf '"constraints":[],'
   printf '"tools":[],'
+  printf '"plan":null,'
   printf '"next_prompt":"%s"' "$(json_escape "Ask one focused clarification question before selecting a skill.")"
   printf '}\n'
   exit 0
@@ -492,6 +629,55 @@ while IFS= read -r v; do
   [[ -n "$v" ]] && tools_csv="$(append_csv "$tools_csv" "$v")"
 done < <(yaml_get_list_field "$skill_meta" "tools")
 
+plan_assumptions_csv=""
+plan_steps_csv=""
+plan_expected_outputs_csv=""
+plan_fallbacks_csv=""
+plan_retry_policy=""
+
+if [[ -n "$effective_task" ]]; then
+  while IFS= read -r v; do
+    [[ -z "$v" ]] && continue
+    rendered="$(render_plan_value "$v" "$effective_task" "$primary_skill")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "$rendered")"
+  done < <(output_contract_list_field "$output_contracts_file" "$effective_task" "assumptions")
+
+  while IFS= read -r v; do
+    [[ -z "$v" ]] && continue
+    rendered="$(render_plan_value "$v" "$effective_task" "$primary_skill")"
+    plan_steps_csv="$(append_csv "$plan_steps_csv" "$rendered")"
+  done < <(output_contract_list_field "$output_contracts_file" "$effective_task" "runnable_steps")
+
+  while IFS= read -r v; do
+    [[ -z "$v" ]] && continue
+    rendered="$(render_plan_value "$v" "$effective_task" "$primary_skill")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "$rendered")"
+  done < <(output_contract_list_field "$output_contracts_file" "$effective_task" "expected_outputs")
+
+  while IFS= read -r v; do
+    [[ -z "$v" ]] && continue
+    rendered="$(render_plan_value "$v" "$effective_task" "$primary_skill")"
+    plan_fallbacks_csv="$(append_csv "$plan_fallbacks_csv" "$rendered")"
+  done < <(output_contract_list_field "$output_contracts_file" "$effective_task" "fallbacks")
+
+  while IFS= read -r sid; do
+    [[ -z "$sid" ]] && continue
+    if [[ "$sid" == "$primary_skill" ]]; then
+      continue
+    fi
+    plan_fallbacks_csv="$(append_csv "$plan_fallbacks_csv" "$sid")"
+  done < <(recovery_policy_list_fallback_skills "$recovery_policies_file" "$effective_task")
+
+  plan_retry_policy="$(recovery_policy_get_retry_policy "$recovery_policies_file" "$effective_task" || true)"
+  if [[ -z "$plan_retry_policy" ]]; then
+    plan_retry_policy="$(output_contract_get_scalar "$output_contracts_file" "$effective_task" "retry_policy" || true)"
+  fi
+fi
+
+if [[ -z "$plan_retry_policy" ]]; then
+  plan_retry_policy="single-pass-no-retry"
+fi
+
 query_lc="$(to_lower "$query")"
 provided_csv=""
 missing_csv=""
@@ -503,6 +689,29 @@ for req in $(printf '%s\n' "$required_csv" | tr ',' ' '); do
     missing_csv="$(append_csv "$missing_csv" "$req")"
   fi
 done
+
+if [[ -n "$missing_csv" ]]; then
+  while IFS= read -r req; do
+    [[ -z "$req" ]] && continue
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "missing-input-needs-clarification:$req")"
+  done < <(printf '%s\n' "$missing_csv" | tr ',' '\n')
+fi
+
+if [[ -z "$plan_assumptions_csv" ]]; then
+  plan_assumptions_csv="follow-task-contract-and-skill-constraints"
+fi
+
+if [[ -z "$plan_steps_csv" ]]; then
+  if [[ -n "$effective_task" ]]; then
+    plan_steps_csv="bash scripts/run_agent.sh --task $effective_task --query follow-up-required --format json"
+  else
+    plan_steps_csv="bash scripts/run_agent.sh --query follow-up-required --format json"
+  fi
+fi
+
+if [[ -z "$plan_expected_outputs_csv" ]]; then
+  plan_expected_outputs_csv="structured-agent-plan-json"
+fi
 
 playbook_path=""
 if [[ -n "$effective_task" && -f "$REPO_ROOT/playbooks/$effective_task/README.md" ]]; then
@@ -580,6 +789,18 @@ if [[ "$format" == "text" ]]; then
     echo "tools: none"
   fi
 
+  emit_text_plan_block \
+    "${effective_task:-none}" \
+    "$primary_skill" \
+    "$plan_assumptions_csv" \
+    "$required_csv" \
+    "$missing_csv" \
+    "$constraints_csv" \
+    "$plan_steps_csv" \
+    "$plan_expected_outputs_csv" \
+    "$plan_fallbacks_csv" \
+    "$plan_retry_policy"
+
   echo "next_prompt: $next_prompt"
   exit 0
 fi
@@ -625,6 +846,19 @@ emit_json_array_from_csv "${constraints_csv:-}"
 printf ','
 printf '"tools":'
 emit_json_array_from_csv "${tools_csv:-}"
+printf ','
+printf '"plan":'
+emit_json_plan_object \
+  "${effective_task:-none}" \
+  "$primary_skill" \
+  "$plan_assumptions_csv" \
+  "$required_csv" \
+  "$missing_csv" \
+  "$constraints_csv" \
+  "$plan_steps_csv" \
+  "$plan_expected_outputs_csv" \
+  "$plan_fallbacks_csv" \
+  "$plan_retry_policy"
 printf ','
 printf '"next_prompt":"%s"' "$(json_escape "$next_prompt")"
 printf '}\n'

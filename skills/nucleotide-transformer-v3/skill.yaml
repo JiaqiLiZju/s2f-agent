@@ -7,7 +7,7 @@ family: transformers-ntv3
 tasks:
   - embedding
   - track-prediction
-  - setup
+  - environment-setup
   - troubleshooting
 triggers:
   - ntv3
@@ -27,6 +27,25 @@ constraints:
 tools:
   - scripts/check_valid_length.py
   - scripts/run_track_prediction.py
+tool_contracts:
+  - tool: scripts/check_valid_length.py
+    inputs:
+      - sequence-length
+    outputs:
+      - length-validity-report
+    side_effects:
+      - none
+    failure_codes:
+      - 1
+  - tool: scripts/run_track_prediction.py
+    inputs:
+      - species-assembly-and-interval
+    outputs:
+      - track-plot-and-metadata
+    side_effects:
+      - writes-output-artifacts
+    failure_codes:
+      - 1
 priority_rules:
   - prefer-when-user-explicitly-mentions-ntv3
   - prefer-when-task-needs-species-conditioned-track-prediction
