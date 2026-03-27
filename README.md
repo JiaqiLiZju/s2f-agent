@@ -58,20 +58,21 @@ Use $nucleotide-transformer-v3 to write a species-conditioned NTv3 inference exa
 
 ## What This Repository Includes
 
-The repository currently includes ten packaged skills:
+The repository currently includes eleven packaged skills:
 
 | Skill ID | Best for | Explicit invocation | Docs |
 | --- | --- | --- | --- |
 | `alphagenome-api` | AlphaGenome setup, variant prediction, plotting, and troubleshooting | `$alphagenome-api` | [`SKILL.md`](./skills/alphagenome-api/SKILL.md) · [`references/`](./skills/alphagenome-api/references/) |
-| `basset-workflows` | Legacy Basset Torch7 preprocessing, prediction, interpretation, and SAD workflows | `$basset-workflows` | [`SKILL.md`](./basset-workflows/SKILL.md) · [`references/`](./basset-workflows/references/) |
-| `bpnet` | BPNet setup, preprocessing, train/predict/SHAP workflows, and motif/hit-calling integration | `$bpnet` | [`SKILL.md`](./bpnet/SKILL.md) · [`references/`](./bpnet/references/) |
+| `basset-workflows` | Legacy Basset Torch7 preprocessing, prediction, interpretation, and SAD workflows | `$basset-workflows` | [`SKILL.md`](./skills-dev/basset-workflows/SKILL.md) · [`references/`](./skills-dev/basset-workflows/references/) |
+| `bpnet` | BPNet setup, preprocessing, train/predict/SHAP workflows, and motif/hit-calling integration | `$bpnet` | [`SKILL.md`](./skills-dev/bpnet/SKILL.md) · [`references/`](./skills-dev/bpnet/references/) |
 | `borzoi-workflows` | Borzoi setup, tutorials, model download, variant scoring, and interpretation workflows | `$borzoi-workflows` | [`SKILL.md`](./skills/borzoi-workflows/SKILL.md) · [`references/`](./skills/borzoi-workflows/references/) |
 | `dnabert2` | DNABERT2 embeddings, GUE evaluation, CSV validation, and fine-tuning workflows | `$dnabert2` | [`SKILL.md`](./skills/dnabert2/SKILL.md) · [`references/`](./skills/dnabert2/references/) |
 | `evo2-inference` | Evo 2 installation, checkpoint choice, inference, and deployment paths | `$evo2-inference` | [`SKILL.md`](./skills/evo2-inference/SKILL.md) · [`references/`](./skills/evo2-inference/references/) |
 | `gpn-models` | Choosing between GPN-family frameworks and grounded loading/CLI workflows | `$gpn-models` | [`SKILL.md`](./skills/gpn-models/SKILL.md) · [`references/`](./skills/gpn-models/references/) |
-| `nucleotide-transformer` | Classic NT v1/v2 JAX inference, tokenization, and embeddings workflows | `$nucleotide-transformer` | [`SKILL.md`](./nucleotide-transformer/SKILL.md) · [`references/`](./nucleotide-transformer/references/) |
+| `nucleotide-transformer` | Classic NT v1/v2 JAX inference, tokenization, and embeddings workflows | `$nucleotide-transformer` | [`SKILL.md`](./skills-dev/nucleotide-transformer/SKILL.md) · [`references/`](./skills-dev/nucleotide-transformer/references/) |
 | `nucleotide-transformer-v3` | NTv3 Transformers inference, species conditioning, setup troubleshooting, and length-aware runs | `$nucleotide-transformer-v3` | [`SKILL.md`](./skills/nucleotide-transformer-v3/SKILL.md) · [`references/`](./skills/nucleotide-transformer-v3/references/) |
 | `segment-nt` | SegmentNT, SegmentEnformer, and SegmentBorzoi segmentation inference workflows | `$segment-nt` | [`SKILL.md`](./skills/segment-nt/SKILL.md) · [`references/`](./skills/segment-nt/references/) |
+| `skill-factory` | Scaffold consistent skills from JSON specs | `$skill-factory` | [`SKILL.md`](./skills-dev/skill-factory/SKILL.md) · [`references/`](./skills-dev/skill-factory/references/) |
 
 Source notes used to build or plan skills are in [`Readme/`](./Readme/).
 
@@ -82,16 +83,14 @@ s2f-skills/
 ├── agent/
 ├── registry/
 ├── skills/
+├── skills-dev/
 ├── playbooks/
 ├── evals/
 ├── docs/
 ├── README.md
 ├── Readme/
 ├── scripts/
-├── basset-workflows/
-├── bpnet/
-├── nucleotide-transformer/
-└── skills/
+└── Readme/
 ```
 
 Namespace migration note:
@@ -105,6 +104,14 @@ Namespace migration note:
   - `dnabert2`
   - `segment-nt`
 - Root-level paths for these migrated skills are now removed; use `skills/<skill-id>/` paths.
+
+Temporary development note:
+
+- The following in-progress skills are currently staged under `skills-dev/` for testing:
+  - `basset-workflows`
+  - `bpnet`
+  - `nucleotide-transformer`
+  - `skill-factory`
 
 ## Deployment Guide
 

@@ -90,3 +90,11 @@ tags:
     - segment-nt
   rescaling-factor:
     - segment-nt
+  skill-scaffold:
+    - skill-factory
+  skill-registry-update:
+    - skill-factory
+  skill-template-generation:
+    - skill-factory
+  skill-validation:
+    - skill-factory

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Basset Workflows"
-  short_description: "Legacy Basset Torch7 workflows"
-  default_prompt: "Use $basset-workflows to help me run legacy Basset preprocessing, training, testing, and SAD/saturated-mutagenesis interpretation workflows."

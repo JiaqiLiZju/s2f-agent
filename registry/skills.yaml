@@ -15,7 +15,7 @@ skills:
       - dna_client
       - predict_variant
   - id: basset-workflows
-    path: basset-workflows
+    path: skills-dev/basset-workflows
     enabled: true
     family: legacy-cnn-regulatory
     tasks:
@@ -28,7 +28,7 @@ skills:
       - torch7
       - sad
   - id: bpnet
-    path: bpnet
+    path: skills-dev/bpnet
     enabled: true
     family: profile-prediction-and-attribution
     tasks:
@@ -96,7 +96,7 @@ skills:
       - phylogpn
       - gpn-star
   - id: nucleotide-transformer
-    path: nucleotide-transformer
+    path: skills-dev/nucleotide-transformer
     enabled: true
     family: jax-haiku-transformers
     tasks:
@@ -134,3 +134,17 @@ skills:
       - segmentnt
       - segmentenformer
       - segmentborzoi
+  - id: skill-factory
+    path: skills-dev/skill-factory
+    enabled: true
+    family: skilling-and-scaffolding
+    tasks:
+      - skill-scaffold
+      - skill-registry-update
+      - skill-template-generation
+      - skill-validation
+    triggers:
+      - skill-factory
+      - scaffold-skill
+      - create-skill
+      - generate-skill
