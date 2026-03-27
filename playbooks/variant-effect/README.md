@@ -2,51 +2,73 @@
 
 ## Purpose
 
-Provide a consistent, cross-skill workflow for variant-effect requests.
+Provide a contract-aligned orchestration pattern for variant-effect requests.
 
-## Minimum Input Contract
+## Use This When
 
-Required:
+- The user needs REF vs ALT impact guidance.
+- The user asks for variant prioritization or variant scoring workflows.
+- The user wants model-specific caveats before execution.
+
+## Required Inputs (Canonical Keys)
+
+Required task-contract keys:
 
 - `assembly`
-- `chrom`
-- coordinate definition (`position` or `[start, end)`)
-- REF/ALT alleles or a reproducible variant specification
+- `coordinate-or-interval`
+- `ref-alt-or-variant-spec`
 
-Optional but often important:
+Optional context that improves routing quality:
 
 - species
-- requested output modality (for example RNA-seq tracks)
-- tissue or ontology terms
-- desired runtime path (local vs hosted)
+- output modality (for example RNA-related tracks)
+- execution path preference (local vs hosted)
 
-## Candidate Skills
+## Skill Selection Heuristics
 
-- `alphagenome-api`: API-based variant prediction with plotting workflow.
-- `borzoi-workflows`: Borzoi tutorial-grounded variant scoring and interpretation.
-- `gpn-models`: model family selection and grounded variant-related workflows.
-- `evo2-inference`: REF-vs-ALT proxy patterns, especially for hosted and long-context workflows.
+1. Prefer `alphagenome-api` when the query explicitly asks for AlphaGenome API methods.
+2. Prefer `borzoi-workflows` for Borzoi tutorial-grounded variant workflows.
+3. Prefer `gpn-models` for framework-selection-heavy variant analysis.
+4. Consider `evo2-inference` when local GPU constraints suggest hosted fallback.
 
-## Routing Heuristics
+## Output Expectations (Mapped to Output Contract)
 
-1. If the user explicitly asks for AlphaGenome API methods, pick `alphagenome-api`.
-2. If the user asks for Borzoi tutorial scripts, pick `borzoi-workflows`.
-3. If the user needs framework selection or uncertainty resolution, pick `gpn-models`.
-4. If local GPU constraints block heavy local paths, consider `evo2-inference` hosted path.
+For `variant-effect` in `registry/output_contracts.yaml`, a high-quality response should map to:
 
-## Output Contract
+- `assumptions`: coordinate convention and model-limited REF/ALT interpretation
+- `runnable_steps`: reproducible command chain for routing plus playbook reference
+- `expected_outputs`: variant-effect plan artifact expectations
+- `fallbacks`: clarify missing variant specification and alternative skills
+- `retry_policy`: clarify missing inputs, then retry once
 
-A valid answer should include:
+## Minimal Reproducible Commands
 
-1. chosen method and rationale
-2. coordinate convention and assumptions
-3. runnable minimal example
-4. caveats and fallback path
-
-## Minimal Repro Example
+Text output:
 
 ```bash
 bash scripts/run_agent.sh \
   --task variant-effect \
-  --query "Need variant-effect guidance for hg38 chr12 REF ALT with output summary."
+  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --format text
 ```
+
+JSON output:
+
+```bash
+bash scripts/run_agent.sh \
+  --task variant-effect \
+  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --format json
+```
+
+## Clarify Flow (When Inputs Are Missing)
+
+1. Check `missing_inputs` in the `run_agent.sh` output.
+2. Ask one focused follow-up per missing key, prioritizing `assembly` then coordinate and allele specification.
+3. Re-run `run_agent.sh` with the clarified inputs.
+4. Validate dry-run execution with `scripts/execute_plan.sh` before any real run.
+
+## Matching Tutorial
+
+- [Variant-Effect Tutorial](../../tutorials/02-variant-effect.md)
+- [Troubleshooting and Clarify Tutorial](../../tutorials/06-troubleshooting-and-clarify.md)

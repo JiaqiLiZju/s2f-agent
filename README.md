@@ -121,43 +121,89 @@ Architecture details: [`docs/architecture.md`](./docs/architecture.md).
 
 ## Routing and Agent Runtime
 
-Use the router when you only need skill selection and confidence:
+The `s2f` agent turns open-ended genomics requests into deterministic, inspectable execution plans.
+
+What it does on each query:
+
+1. infer (or accept) task intent
+2. rank skill candidates and emit `route` or `clarify`
+3. validate required task inputs
+4. generate a normalized `plan` contract
+5. support dry-run or execution of plan steps
+
+### Route vs Run vs Execute
+
+| Command | Use when | Primary output |
+| --- | --- | --- |
+| `scripts/route_query.sh` | You only need routing confidence and skill ranking | `decision`, `confidence`, primary/secondary skills |
+| `scripts/run_agent.sh` | You need full orchestration (routing + input checks + plan) | structured agent response with `plan` |
+| `scripts/execute_plan.sh` | You want to dry-run or run generated `plan.runnable_steps` | execution summary + expected output verification |
+
+### If You Only Run 3 Commands
 
 ```bash
-./scripts/route_query.sh --query "Use \$dnabert2 to validate my train/dev/test CSV."
-./scripts/route_query.sh --query "I need NTv3 track prediction for hg38." --format json
-./scripts/route_query.sh --query "Train a model on fasta labels." --task fine-tuning
-./scripts/route_query.sh --include-disabled --query "Use \$skill-factory to scaffold a new skill"
+./scripts/route_query.sh --query "Need variant-effect guidance for hg38 chr12 REF ALT" --format json
+./scripts/run_agent.sh --task variant-effect --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' --format json
+./scripts/execute_plan.sh --task variant-effect --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G'
 ```
 
-Use the full agent runtime when you also need required-input checks and playbook mapping:
+Note: use single quotes around queries containing `$skill` to avoid shell expansion.
 
+### Happy-Path Example (Variant-Effect)
+
+1. Route the request:
 ```bash
-./scripts/run_agent.sh --query "Need variant-effect guidance around chr12 with REF/ALT."
-./scripts/run_agent.sh --query "Help me run Evo2 generation without NVIDIA GPU" --format json
-./scripts/run_agent.sh --include-disabled --query "Use \$skill-factory to scaffold from spec"
+./scripts/route_query.sh --query "Need variant-effect guidance around chr12 with REF/ALT." --format text
 ```
+Expected checkpoint: `decision=route` or `decision=clarify` with a focused clarify question.
 
-Execute generated plan steps (dry-run by default):
-
+2. Build a full plan:
 ```bash
-./scripts/execute_plan.sh --query "Need track-prediction plan for human hg38 interval"
-./scripts/execute_plan.sh --query "Need track-prediction plan for human hg38 interval" --run
+./scripts/run_agent.sh --task variant-effect --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' --format json
 ```
+Expected checkpoint: `primary_skill=alphagenome-api`, `missing_inputs=[]`, non-null `plan`.
+
+3. Validate plan execution path (dry-run):
+```bash
+./scripts/execute_plan.sh --task variant-effect --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' --format text
+```
+Expected checkpoint: `dry_run=1`, `failed=0`, `verify_failed=0`.
+
+### Agent Output Fields
+
+| Field | Meaning | Why it matters |
+| --- | --- | --- |
+| `decision` | `route` or `clarify` | tells you whether execution can proceed immediately |
+| `primary_skill` | selected lead skill | confirms routing target |
+| `missing_inputs` | required inputs not found in query | drives clarify questions and assumption risk |
+| `plan` | normalized execution contract | source of runnable steps and expected outputs |
+| `clarify_question` | focused follow-up question | shortest path to unblock low-confidence routing |
+
+### Link Map (Contracts vs Learning)
+
+Contract-first references:
+
+- [`playbooks/variant-effect/README.md`](./playbooks/variant-effect/README.md)
+- [`playbooks/embedding/README.md`](./playbooks/embedding/README.md)
+- [`playbooks/track-prediction/README.md`](./playbooks/track-prediction/README.md)
+- [`playbooks/fine-tuning/README.md`](./playbooks/fine-tuning/README.md)
+- [`playbooks/environment-setup/README.md`](./playbooks/environment-setup/README.md)
+
+Step-by-step tutorials:
+
+- [`tutorials/README.md`](./tutorials/README.md)
+- [`tutorials/01-quickstart-agent.md`](./tutorials/01-quickstart-agent.md)
+- [`tutorials/02-variant-effect.md`](./tutorials/02-variant-effect.md)
+- [`tutorials/03-embedding.md`](./tutorials/03-embedding.md)
+- [`tutorials/04-track-prediction.md`](./tutorials/04-track-prediction.md)
+- [`tutorials/05-fine-tuning.md`](./tutorials/05-fine-tuning.md)
+- [`tutorials/06-troubleshooting-and-clarify.md`](./tutorials/06-troubleshooting-and-clarify.md)
 
 Open the local interactive console:
 
 ```bash
 ./scripts/agent_console.sh
 ```
-
-Decision lifecycle per query:
-
-1. infer or accept task hint
-2. score and rank candidate skills
-3. emit `decision=route` or `decision=clarify` with confidence
-4. if routed, resolve required inputs from task contracts first, then skill contracts
-5. emit normalized `plan` object (`runnable_steps`, `expected_outputs`, `fallbacks`, `retry_policy`)
 
 ## Installation and Deployment
 

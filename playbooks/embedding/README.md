@@ -2,54 +2,72 @@
 
 ## Purpose
 
-Provide a consistent workflow for embedding requests across sequence and coordinate inputs.
+Provide a contract-aligned orchestration pattern for embedding requests.
 
-## Minimum Input Contract
+## Use This When
 
-Required:
+- The user asks for sequence or interval embeddings.
+- The user needs token-level or pooled representation guidance.
+- The user wants model-path selection before coding.
 
-- sequence input or genomic interval input
-- expected embedding target (token-level, pooled, or track-level representation)
+## Required Inputs (Canonical Keys)
 
-Required for interval workflows:
+Required task-contract keys:
 
-- species
-- assembly
-- chromosome naming convention
+- `sequence-or-interval`
+- `embedding-target`
 
-Optional:
+Optional context that improves execution quality:
 
+- species and assembly for interval workflows
 - model preference
-- length constraints
-- downstream task objective
+- sequence length constraints
 
-## Candidate Skills
+## Skill Selection Heuristics
 
-- `dnabert2`: DNABERT-2 sequence and coordinate embedding workflows.
-- `nucleotide-transformer`: classic NT v1/v2 JAX embedding and tokenization workflows.
-- `nucleotide-transformer-v3`: NTv3 species-conditioned embedding and track workflows.
-- `evo2-inference`: Evo 2 forward/embedding workflows with hosted fallback options.
+1. Prefer `dnabert2` when the user explicitly mentions DNABERT-2.
+2. Prefer `nucleotide-transformer-v3` for NTv3 species-conditioned embedding paths.
+3. Prefer `nucleotide-transformer` only when classic NT v1/v2 JAX behavior is required.
+4. Prefer `evo2-inference` when hosted fallback is important.
 
-## Routing Heuristics
+## Output Expectations (Mapped to Output Contract)
 
-1. If the user explicitly names DNABERT-2, use `dnabert2`.
-2. If the user asks for NT v1/v2 JAX APIs, use `nucleotide-transformer`.
-3. If the user asks for NTv3 species-conditioned outputs, use `nucleotide-transformer-v3`.
-4. If hardware or local install constraints are dominant, consider `evo2-inference` hosted path.
+For `embedding` in `registry/output_contracts.yaml`, a high-quality response should map to:
 
-## Output Contract
+- `assumptions`: tokenization/length compatibility and explicit embedding granularity
+- `runnable_steps`: embedding-oriented orchestration command chain
+- `expected_outputs`: embedding metadata and shape expectations
+- `fallbacks`: compatible secondary embedding skill path
+- `retry_policy`: clarify missing embedding target, then retry once
 
-A valid answer should include:
+## Minimal Reproducible Commands
 
-1. chosen model path and rationale
-2. token and length expectations
-3. runnable minimal code
-4. constraints and troubleshooting notes
-
-## Minimal Repro Example
+Text output:
 
 ```bash
 bash scripts/run_agent.sh \
   --task embedding \
-  --query "Need embedding plan for sequence interval and pooled representation."
+  --query 'Use $dnabert2 for pooled embedding on a genomic interval' \
+  --format text
 ```
+
+JSON output:
+
+```bash
+bash scripts/run_agent.sh \
+  --task embedding \
+  --query 'Use $dnabert2 for pooled embedding on a genomic interval' \
+  --format json
+```
+
+## Clarify Flow (When Inputs Are Missing)
+
+1. Inspect `missing_inputs` for `sequence-or-interval` and `embedding-target`.
+2. Clarify one missing input at a time with concrete examples.
+3. Re-run the same task query with clarified values.
+4. Confirm plan fields before downstream execution.
+
+## Matching Tutorial
+
+- [Embedding Tutorial](../../tutorials/03-embedding.md)
+- [Troubleshooting and Clarify Tutorial](../../tutorials/06-troubleshooting-and-clarify.md)
