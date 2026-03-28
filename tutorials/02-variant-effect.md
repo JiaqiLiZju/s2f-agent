@@ -9,7 +9,7 @@ Generate a variant-effect orchestration plan with explicit required inputs.
 ```bash
 bash scripts/run_agent.sh \
   --task variant-effect \
-  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --query 'Use $alphagenome-api predict_variant on hg38 chrom=chr12 position=1_000_000 alt=G and save outputs to output/alphagenome' \
   --format text
 ```
 
@@ -24,7 +24,7 @@ Expected output checkpoint:
 ```bash
 bash scripts/run_agent.sh \
   --task variant-effect \
-  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --query 'Use $alphagenome-api predict_variant on hg38 chrom=chr12 position=1_000_000 alt=G and save outputs to output/alphagenome' \
   --format json
 ```
 
@@ -38,7 +38,7 @@ Expected output checkpoint:
 ```bash
 bash scripts/execute_plan.sh \
   --task variant-effect \
-  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --query 'Use $alphagenome-api predict_variant on hg38 chrom=chr12 position=1_000_000 alt=G and save outputs to output/alphagenome' \
   --format text
 ```
 
@@ -52,6 +52,12 @@ Expected output checkpoint:
 - `missing_inputs` includes `assembly` -> add assembly string (for example `hg38`).
 - `missing_inputs` includes `ref-alt-or-variant-spec` -> provide explicit REF/ALT or equivalent variant spec.
 - `decision: clarify` with low confidence -> keep `--task variant-effect` and include explicit skill/model hint.
+- parsed `position` looks wrong -> prefer either `position=1_000_000` or `chr12:1000000` in the query.
+
+## Accepted Position Formats for Agent Parsing
+
+- `chrom=chr12 position=1_000_000 alt=G`
+- `chr12:1000000 alt=G`
 
 ## Related Playbook
 

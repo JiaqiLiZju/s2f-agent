@@ -20,7 +20,7 @@ Expected output checkpoint:
 ```bash
 bash scripts/run_agent.sh \
   --task variant-effect \
-  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --query 'Use $alphagenome-api predict_variant on hg38 chrom=chr12 position=1_000_000 alt=G' \
   --format text
 ```
 
@@ -34,7 +34,7 @@ Expected output checkpoint:
 ```bash
 bash scripts/execute_plan.sh \
   --task variant-effect \
-  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --query 'Use $alphagenome-api predict_variant on hg38 chrom=chr12 position=1_000_000 alt=G' \
   --format text
 ```
 

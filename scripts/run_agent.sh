@@ -455,7 +455,7 @@ extract_alphagenome_variant_from_query() {
   fi
 
   if [[ -z "$position" ]]; then
-    position_raw="$(printf '%s\n' "$query_raw" | grep -Eio 'position[[:space:]]*[:=]?[[:space:]]*[0-9_,]+' | head -n 1 | sed -E 's/.*([0-9][0-9_,]*).*/\1/' || true)"
+    position_raw="$(printf '%s\n' "$query_raw" | grep -Eio 'position[[:space:]]*[:=]?[[:space:]]*[0-9_,]+' | head -n 1 | grep -Eo '[0-9][0-9_,]*' | head -n 1 || true)"
     position="$(normalize_numeric_token "$position_raw")"
   fi
   if [[ -z "$position" ]]; then
@@ -522,6 +522,43 @@ extract_alphagenome_env_from_query() {
     env_name="alphagenome-py310"
   fi
   printf '%s\n' "$env_name"
+}
+
+resolve_conda_env_prefix() {
+  local env_name="$1"
+  local prefix=""
+  local line=""
+
+  if [[ -z "$env_name" ]]; then
+    printf '\n'
+    return 0
+  fi
+  if ! command -v conda >/dev/null 2>&1; then
+    printf '\n'
+    return 0
+  fi
+
+  while IFS= read -r line; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    [[ -z "$line" || "$line" == \#* ]] && continue
+
+    if [[ "$line" == *"/envs/${env_name}"* || "$line" == */"${env_name}" ]]; then
+      prefix="${line##* }"
+    else
+      set -- $line
+      if [[ "$1" == "$env_name" ]]; then
+        prefix="${@: -1}"
+      fi
+    fi
+
+    if [[ -n "$prefix" && -x "$prefix/bin/python" ]]; then
+      printf '%s\n' "$prefix"
+      return 0
+    fi
+    prefix=""
+  done < <(conda info --envs 2>/dev/null || true)
+
+  printf '\n'
 }
 
 input_satisfied() {
@@ -988,6 +1025,8 @@ if [[ "$effective_task" == "variant-effect" && "$primary_skill" == "alphagenome-
   ag_variant_csv="$(extract_alphagenome_variant_from_query "$query")"
   ag_output_dir="$(extract_alphagenome_output_dir_from_query "$query")"
   ag_env_name="$(extract_alphagenome_env_from_query "$query")"
+  ag_env_prefix="$(resolve_conda_env_prefix "$ag_env_name")"
+  ag_conda_cmd=""
   ag_chrom=""
   ag_position=""
   ag_alt=""
@@ -1019,8 +1058,18 @@ if [[ "$effective_task" == "variant-effect" && "$primary_skill" == "alphagenome-
     ag_plot_glob="${ag_output_dir}/${ag_chrom}_${ag_position}_*_to_${ag_alt}_rnaseq_overlay.png"
     ag_log_path="${ag_output_dir}/alphagenome_predict_variant.log"
 
-    ag_step_cmd="set -a; source .env; set +a; mkdir -p ${ag_output_dir}; conda run -n ${ag_env_name} python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py --chrom ${ag_chrom} --position ${ag_position} --alt ${ag_alt} --assembly ${ag_assembly} --output-dir ${ag_output_dir} 2>&1 | tee ${ag_log_path}"
-    ag_fallback_cmd="set -a; source .env; set +a; mkdir -p ${ag_output_dir}; grpc_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 https_proxy=http://127.0.0.1:7890 conda run -n ${ag_env_name} python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py --chrom ${ag_chrom} --position ${ag_position} --alt ${ag_alt} --assembly ${ag_assembly} --output-dir ${ag_output_dir} --request-timeout-sec 120 2>&1 | tee ${ag_log_path}"
+    if [[ -n "$ag_env_prefix" ]]; then
+      ag_conda_cmd="conda run -p ${ag_env_prefix}"
+      plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "conda-env-auto-resolved:prefix")"
+      plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "conda-env-prefix:${ag_env_prefix}")"
+    else
+      ag_conda_cmd="conda run -n ${ag_env_name}"
+      plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "conda-env-auto-resolved:name")"
+      plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "conda-env-name:${ag_env_name}")"
+    fi
+
+    ag_step_cmd="set -a; source .env; set +a; mkdir -p ${ag_output_dir}; ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py --chrom ${ag_chrom} --position ${ag_position} --alt ${ag_alt} --assembly ${ag_assembly} --output-dir ${ag_output_dir} 2>&1 | tee ${ag_log_path}"
+    ag_fallback_cmd="set -a; source .env; set +a; mkdir -p ${ag_output_dir}; grpc_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 https_proxy=http://127.0.0.1:7890 ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py --chrom ${ag_chrom} --position ${ag_position} --alt ${ag_alt} --assembly ${ag_assembly} --output-dir ${ag_output_dir} --request-timeout-sec 120 2>&1 | tee ${ag_log_path}"
 
     plan_steps_csv="$ag_step_cmd"
     plan_expected_outputs_csv=""
