@@ -8,6 +8,7 @@ DEFAULT_ROUTING_FILE="$REPO_ROOT/registry/routing.yaml"
 DEFAULT_CONTRACTS_FILE="$REPO_ROOT/registry/task_contracts.yaml"
 DEFAULT_OUTPUT_CONTRACTS_FILE="$REPO_ROOT/registry/output_contracts.yaml"
 DEFAULT_RECOVERY_POLICIES_FILE="$REPO_ROOT/registry/recovery_policies.yaml"
+DEFAULT_INPUT_SCHEMA_FILE="$REPO_ROOT/registry/input_schema.yaml"
 DEFAULT_ROUTER_SCRIPT="$REPO_ROOT/scripts/route_query.sh"
 source "$REPO_ROOT/scripts/lib_registry.sh"
 
@@ -32,6 +33,7 @@ Options:
   --contracts FILE       Task contracts file. Default: <repo>/registry/task_contracts.yaml
   --output-contracts FILE Output contracts file. Default: <repo>/registry/output_contracts.yaml
   --recovery FILE        Recovery policy file. Default: <repo>/registry/recovery_policies.yaml
+  --input-schema FILE    Canonical input schema file. Default: <repo>/registry/input_schema.yaml
   --router FILE          Router script path. Default: <repo>/scripts/route_query.sh
   --include-disabled     Include disabled skills in routing candidates.
   -h, --help             Show this help message.
@@ -245,6 +247,34 @@ emit_json_plan_object() {
 
 json_escape() {
   printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+
+canonicalize_csv() {
+  local csv="${1:-}"
+  local schema_file="${2:-}"
+  local out=""
+  local item=""
+  local resolved=""
+
+  if [[ -z "$csv" ]]; then
+    printf '\n'
+    return 0
+  fi
+
+  while IFS= read -r item; do
+    [[ -z "$item" ]] && continue
+    if [[ -n "$schema_file" ]]; then
+      resolved="$(input_schema_resolve_key "$schema_file" "$item" || true)"
+    else
+      resolved=""
+    fi
+    if [[ -z "$resolved" ]]; then
+      resolved="$item"
+    fi
+    out="$(append_csv "$out" "$resolved")"
+  done < <(printf '%s\n' "$csv" | tr ',' '\n')
+
+  printf '%s\n' "$out"
 }
 
 extract_decision_from_json() {
@@ -561,7 +591,7 @@ resolve_conda_env_prefix() {
   printf '\n'
 }
 
-input_satisfied() {
+input_satisfied_legacy() {
   local input_name="$1"
   local query_lc="$2"
   local raw="$input_name"
@@ -661,6 +691,67 @@ input_satisfied() {
   return 1
 }
 
+input_satisfied() {
+  local input_name="$1"
+  local query_lc="$2"
+  local skill_meta="$3"
+  local schema_file="$4"
+  local canonical_key=""
+  local phrase=""
+  local token=""
+  local token_lc=""
+
+  canonical_key="$(input_schema_resolve_key "$schema_file" "$input_name" || true)"
+  if [[ -z "$canonical_key" ]]; then
+    canonical_key="$input_name"
+  fi
+
+  for phrase in "$input_name" "$canonical_key"; do
+    [[ -z "$phrase" ]] && continue
+    phrase="$(to_lower "$phrase")"
+    phrase="${phrase//-/ }"
+    phrase="${phrase//_/ }"
+    if contains_token "$query_lc" "$phrase"; then
+      return 0
+    fi
+  done
+
+  while IFS= read -r token; do
+    [[ -z "$token" ]] && continue
+    token_lc="$(to_lower "$token")"
+    if contains_token "$query_lc" "$token_lc"; then
+      return 0
+    fi
+  done < <(input_schema_list_query_tokens "$schema_file" "$canonical_key")
+
+  if [[ -f "$skill_meta" ]]; then
+    while IFS= read -r token; do
+      [[ -z "$token" ]] && continue
+      token_lc="$(to_lower "$token")"
+      if contains_token "$query_lc" "$token_lc"; then
+        return 0
+      fi
+    done < <(skill_meta_list_query_tokens "$skill_meta" "$canonical_key")
+  fi
+
+  if [[ "$canonical_key" == "output-head" ]]; then
+    if has_track_head_intent "$query_lc"; then
+      return 0
+    fi
+  fi
+
+  if input_satisfied_legacy "$canonical_key" "$query_lc"; then
+    return 0
+  fi
+  if [[ "$canonical_key" != "$input_name" ]]; then
+    if input_satisfied_legacy "$input_name" "$query_lc"; then
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
 query=""
 task=""
 top_k=3
@@ -671,6 +762,7 @@ routing_file="$DEFAULT_ROUTING_FILE"
 contracts_file="$DEFAULT_CONTRACTS_FILE"
 output_contracts_file="$DEFAULT_OUTPUT_CONTRACTS_FILE"
 recovery_policies_file="$DEFAULT_RECOVERY_POLICIES_FILE"
+input_schema_file="$DEFAULT_INPUT_SCHEMA_FILE"
 router_script="$DEFAULT_ROUTER_SCRIPT"
 include_disabled=0
 
@@ -714,6 +806,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --recovery)
       recovery_policies_file="$2"
+      shift 2
+      ;;
+    --input-schema)
+      input_schema_file="$2"
       shift 2
       ;;
     --router)
@@ -762,6 +858,7 @@ registry_require_file "$routing_file"
 registry_require_file "$contracts_file"
 registry_require_file "$output_contracts_file"
 registry_require_file "$recovery_policies_file"
+registry_require_file "$input_schema_file"
 if [[ ! -f "$router_script" ]]; then
   echo "error: router script not found: $router_script" >&2
   exit 1
@@ -833,9 +930,12 @@ if [[ "$decision" == "clarify" ]]; then
   printf '"skill_metadata":null,'
   printf '"secondary_skills":[],'
   printf '"required_inputs":[],'
+  printf '"required_inputs_canonical":[],'
   printf '"required_inputs_source":null,'
   printf '"provided_inputs":[],'
+  printf '"provided_inputs_canonical":[],'
   printf '"missing_inputs":[],'
+  printf '"missing_inputs_canonical":[],'
   printf '"constraints":[],'
   printf '"tools":[],'
   printf '"plan":null,'
@@ -862,6 +962,7 @@ skill_doc="$skill_root/SKILL.md"
 
 skill_required_csv=""
 required_csv=""
+required_canonical_csv=""
 required_inputs_source="skill"
 constraints_csv=""
 tools_csv=""
@@ -871,17 +972,28 @@ while IFS= read -r v; do
 done < <(yaml_get_list_field "$skill_meta" "required_inputs")
 
 required_csv="$skill_required_csv"
+required_canonical_csv="$(canonicalize_csv "$skill_required_csv" "$input_schema_file")"
 if [[ -n "$effective_task" ]]; then
   task_required_csv=""
+  task_required_canonical_csv=""
   while IFS= read -r v; do
     [[ -n "$v" ]] && task_required_csv="$(append_csv "$task_required_csv" "$v")"
   done < <(task_contract_list_required_inputs "$contracts_file" "$effective_task")
+  while IFS= read -r v; do
+    [[ -n "$v" ]] && task_required_canonical_csv="$(append_csv "$task_required_canonical_csv" "$v")"
+  done < <(task_contract_list_canonical_required_inputs "$contracts_file" "$effective_task")
 
   if [[ -n "$task_required_csv" ]]; then
     required_csv="$task_required_csv"
     required_inputs_source="task-contract:$effective_task"
   else
     required_inputs_source="skill:$primary_skill"
+  fi
+
+  if [[ -n "$task_required_canonical_csv" ]]; then
+    required_canonical_csv="$task_required_canonical_csv"
+  else
+    required_canonical_csv="$(canonicalize_csv "$required_csv" "$input_schema_file")"
   fi
 else
   required_inputs_source="skill:$primary_skill"
@@ -947,12 +1059,20 @@ fi
 query_lc="$(to_lower "$query")"
 provided_csv=""
 missing_csv=""
+provided_canonical_csv=""
+missing_canonical_csv=""
 for req in $(printf '%s\n' "$required_csv" | tr ',' ' '); do
   [[ -z "$req" ]] && continue
-  if input_satisfied "$req" "$query_lc"; then
+  req_canonical="$(input_schema_resolve_key "$input_schema_file" "$req" || true)"
+  if [[ -z "$req_canonical" ]]; then
+    req_canonical="$req"
+  fi
+  if input_satisfied "$req" "$query_lc" "$skill_meta" "$input_schema_file"; then
     provided_csv="$(append_csv "$provided_csv" "$req")"
+    provided_canonical_csv="$(append_csv "$provided_canonical_csv" "$req_canonical")"
   else
     missing_csv="$(append_csv "$missing_csv" "$req")"
+    missing_canonical_csv="$(append_csv "$missing_canonical_csv" "$req_canonical")"
   fi
 done
 
@@ -1003,8 +1123,8 @@ if [[ "$effective_task" == "track-prediction" && "$primary_skill" == "nucleotide
       ntv3_meta_path="${ntv3_output_dir}/${ntv3_prefix}_meta.json"
       ntv3_log_path="${ntv3_output_dir}/ntv3_run.log"
 
-      ntv3_step_cmd="set -a; source .env; set +a; mkdir -p ${ntv3_output_dir}; conda run -n ntv3 python skills/nucleotide-transformer-v3/scripts/run_track_prediction.py --model ${ntv3_model} --species ${ntv3_species} --assembly ${ntv3_assembly} --chrom ${ntv3_chrom} --start ${ntv3_start} --end ${ntv3_end} --output-dir ${ntv3_output_dir} 2>&1 | tee ${ntv3_log_path}"
-      ntv3_fallback_cmd="set -a; source .env; set +a; mkdir -p ${ntv3_output_dir}; conda run -n ntv3 python skills/nucleotide-transformer-v3/scripts/run_track_prediction.py --model ${ntv3_model} --species ${ntv3_species} --assembly ${ntv3_assembly} --chrom ${ntv3_chrom} --start ${ntv3_start} --end ${ntv3_end} --output-dir ${ntv3_output_dir} --disable-xet 2>&1 | tee ${ntv3_log_path}"
+      ntv3_step_cmd="set -a; source .env; set +a; mkdir -p ${ntv3_output_dir}; conda run -n ntv3 python skills/nucleotide-transformer-v3/scripts/run_track_prediction.py --model ${ntv3_model} --species ${ntv3_species} --assembly ${ntv3_assembly} --interval ${ntv3_chrom}:${ntv3_start}-${ntv3_end} --output-dir ${ntv3_output_dir} 2>&1 | tee ${ntv3_log_path}"
+      ntv3_fallback_cmd="set -a; source .env; set +a; mkdir -p ${ntv3_output_dir}; conda run -n ntv3 python skills/nucleotide-transformer-v3/scripts/run_track_prediction.py --model ${ntv3_model} --species ${ntv3_species} --assembly ${ntv3_assembly} --interval ${ntv3_chrom}:${ntv3_start}-${ntv3_end} --output-dir ${ntv3_output_dir} --disable-xet 2>&1 | tee ${ntv3_log_path}"
 
       plan_steps_csv="$ntv3_step_cmd"
       plan_expected_outputs_csv=""
@@ -1068,8 +1188,8 @@ if [[ "$effective_task" == "variant-effect" && "$primary_skill" == "alphagenome-
       plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "conda-env-name:${ag_env_name}")"
     fi
 
-    ag_step_cmd="set -a; source .env; set +a; mkdir -p ${ag_output_dir}; ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py --chrom ${ag_chrom} --position ${ag_position} --alt ${ag_alt} --assembly ${ag_assembly} --output-dir ${ag_output_dir} 2>&1 | tee ${ag_log_path}"
-    ag_fallback_cmd="set -a; source .env; set +a; mkdir -p ${ag_output_dir}; grpc_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 https_proxy=http://127.0.0.1:7890 ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py --chrom ${ag_chrom} --position ${ag_position} --alt ${ag_alt} --assembly ${ag_assembly} --output-dir ${ag_output_dir} --request-timeout-sec 120 2>&1 | tee ${ag_log_path}"
+    ag_step_cmd="set -a; source .env; set +a; mkdir -p ${ag_output_dir}; ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py --assembly ${ag_assembly} --variant-spec ${ag_chrom}:${ag_position}:${ag_alt} --output-dir ${ag_output_dir} 2>&1 | tee ${ag_log_path}"
+    ag_fallback_cmd="set -a; source .env; set +a; mkdir -p ${ag_output_dir}; grpc_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 https_proxy=http://127.0.0.1:7890 ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py --assembly ${ag_assembly} --variant-spec ${ag_chrom}:${ag_position}:${ag_alt} --output-dir ${ag_output_dir} --request-timeout-sec 120 2>&1 | tee ${ag_log_path}"
 
     plan_steps_csv="$ag_step_cmd"
     plan_expected_outputs_csv=""
@@ -1084,6 +1204,12 @@ if [[ "$effective_task" == "variant-effect" && "$primary_skill" == "alphagenome-
     plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "retry-with-local-proxy-if-grpc-connectivity-times-out")"
   fi
 fi
+
+if [[ -z "$required_canonical_csv" ]]; then
+  required_canonical_csv="$(canonicalize_csv "$required_csv" "$input_schema_file")"
+fi
+provided_canonical_csv="$(canonicalize_csv "$provided_csv" "$input_schema_file")"
+missing_canonical_csv="$(canonicalize_csv "$missing_csv" "$input_schema_file")"
 
 if [[ -z "$plan_steps_csv" ]]; then
   if [[ -n "$effective_task" ]]; then
@@ -1145,6 +1271,13 @@ if [[ "$format" == "text" ]]; then
     echo "required_inputs: none"
   fi
 
+  if [[ -n "$required_canonical_csv" ]]; then
+    echo "required_inputs_canonical:"
+    csv_to_lines_prefixed "$required_canonical_csv" "- "
+  else
+    echo "required_inputs_canonical: none"
+  fi
+
   if [[ -n "$provided_csv" ]]; then
     echo "provided_inputs:"
     csv_to_lines_prefixed "$provided_csv" "- "
@@ -1152,11 +1285,25 @@ if [[ "$format" == "text" ]]; then
     echo "provided_inputs: none"
   fi
 
+  if [[ -n "$provided_canonical_csv" ]]; then
+    echo "provided_inputs_canonical:"
+    csv_to_lines_prefixed "$provided_canonical_csv" "- "
+  else
+    echo "provided_inputs_canonical: none"
+  fi
+
   if [[ -n "$missing_csv" ]]; then
     echo "missing_inputs:"
     csv_to_lines_prefixed "$missing_csv" "- "
   else
     echo "missing_inputs: none"
+  fi
+
+  if [[ -n "$missing_canonical_csv" ]]; then
+    echo "missing_inputs_canonical:"
+    csv_to_lines_prefixed "$missing_canonical_csv" "- "
+  else
+    echo "missing_inputs_canonical: none"
   fi
 
   if [[ -n "$constraints_csv" ]]; then
@@ -1218,12 +1365,21 @@ printf ','
 printf '"required_inputs":'
 emit_json_array_from_csv "${required_csv:-}"
 printf ','
+printf '"required_inputs_canonical":'
+emit_json_array_from_csv "${required_canonical_csv:-}"
+printf ','
 printf '"required_inputs_source":"%s",' "$(json_escape "$required_inputs_source")"
 printf '"provided_inputs":'
 emit_json_array_from_csv "${provided_csv:-}"
 printf ','
+printf '"provided_inputs_canonical":'
+emit_json_array_from_csv "${provided_canonical_csv:-}"
+printf ','
 printf '"missing_inputs":'
 emit_json_array_from_csv "${missing_csv:-}"
+printf ','
+printf '"missing_inputs_canonical":'
+emit_json_array_from_csv "${missing_canonical_csv:-}"
 printf ','
 printf '"constraints":'
 emit_json_array_from_csv "${constraints_csv:-}"

@@ -290,6 +290,205 @@ task_contract_list_required_inputs() {
   ' "$contracts_file"
 }
 
+task_contract_list_canonical_required_inputs() {
+  local contracts_file="$1"
+  local task_name="$2"
+  registry_require_file "$contracts_file"
+  awk -v target="$task_name" '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*contracts:[[:space:]]*$/ {
+      in_contracts = 1
+      next
+    }
+    in_contracts && $0 ~ ("^[[:space:]]{2}" target ":[[:space:]]*$") {
+      in_task = 1
+      in_required = 0
+      next
+    }
+    in_contracts && in_task && /^[[:space:]]{2}[a-zA-Z0-9_-]+:[[:space:]]*$/ {
+      in_task = 0
+      in_required = 0
+      next
+    }
+    in_task && /^[[:space:]]{4}canonical_required_inputs:[[:space:]]*$/ {
+      in_required = 1
+      next
+    }
+    in_task && in_required && /^[[:space:]]{6}-[[:space:]]*/ {
+      item = $0
+      sub(/^[[:space:]]{6}-[[:space:]]*/, "", item)
+      item = cleaned(item)
+      if (item != "") {
+        print item
+      }
+      next
+    }
+    in_task && in_required && /^[[:space:]]{4}[a-zA-Z0-9_-]+:[[:space:]]*/ {
+      in_required = 0
+      next
+    }
+  ' "$contracts_file"
+}
+
+input_schema_list_keys() {
+  local schema_file="$1"
+  registry_require_file "$schema_file"
+  awk '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*inputs:[[:space:]]*$/ {
+      in_inputs = 1
+      next
+    }
+    in_inputs && /^[[:space:]]*-[[:space:]]*key:[[:space:]]*/ {
+      v = $0
+      sub(/^[[:space:]]*-[[:space:]]*key:[[:space:]]*/, "", v)
+      v = cleaned(v)
+      if (v != "") {
+        print v
+      }
+      next
+    }
+    in_inputs && /^[^[:space:]]/ {
+      in_inputs = 0
+      next
+    }
+  ' "$schema_file"
+}
+
+input_schema_resolve_key() {
+  local schema_file="$1"
+  local raw_key="$2"
+  registry_require_file "$schema_file"
+
+  if [[ -z "$raw_key" ]]; then
+    printf '\n'
+    return 0
+  fi
+
+  while IFS= read -r k; do
+    if [[ "$k" == "$raw_key" ]]; then
+      printf '%s\n' "$raw_key"
+      return 0
+    fi
+  done < <(input_schema_list_keys "$schema_file")
+
+  awk -v target="$raw_key" '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*legacy_key_map:[[:space:]]*$/ {
+      in_map = 1
+      next
+    }
+    in_map && /^[[:space:]]{2}[a-zA-Z0-9_.-]+:[[:space:]]*/ {
+      line = $0
+      sub(/^[[:space:]]{2}/, "", line)
+      key = line
+      sub(/:[[:space:]]*.*/, "", key)
+      val = line
+      sub(/^[^:]+:[[:space:]]*/, "", val)
+      key = cleaned(key)
+      val = cleaned(val)
+      if (key == target) {
+        print val
+        exit
+      }
+      next
+    }
+    in_map && /^[^[:space:]]/ {
+      in_map = 0
+      next
+    }
+  ' "$schema_file"
+}
+
+input_schema_list_query_tokens() {
+  local schema_file="$1"
+  local key_name="$2"
+  registry_require_file "$schema_file"
+  awk -v target="$key_name" '
+    function cleaned(s) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+      gsub(/"/, "", s)
+      return s
+    }
+    /^[[:space:]]*inputs:[[:space:]]*$/ {
+      in_inputs = 1
+      next
+    }
+    in_inputs && /^[[:space:]]*-[[:space:]]*key:[[:space:]]*/ {
+      key = $0
+      sub(/^[[:space:]]*-[[:space:]]*key:[[:space:]]*/, "", key)
+      key = cleaned(key)
+      in_target = (key == target)
+      in_tokens = 0
+      next
+    }
+    in_target && /^[[:space:]]*query_tokens:[[:space:]]*$/ {
+      in_tokens = 1
+      next
+    }
+    in_target && in_tokens && /^[[:space:]]*-[[:space:]]*/ {
+      item = $0
+      sub(/^[[:space:]]*-[[:space:]]*/, "", item)
+      item = cleaned(item)
+      if (item != "") {
+        print item
+      }
+      next
+    }
+    in_target && in_tokens && /^[[:space:]]*[a-zA-Z0-9_-]+:[[:space:]]*/ {
+      in_tokens = 0
+      next
+    }
+    in_inputs && /^[^[:space:]]/ {
+      in_inputs = 0
+      in_target = 0
+      in_tokens = 0
+      next
+    }
+  ' "$schema_file"
+}
+
+skill_meta_list_query_tokens() {
+  local skill_meta="$1"
+  local key_name="$2"
+  registry_require_file "$skill_meta"
+
+  local mapping=""
+  local head=""
+  local segment=""
+  local payload=""
+  local token=""
+
+  while IFS= read -r mapping; do
+    [[ -z "$mapping" ]] && continue
+    head="${mapping%%|*}"
+    if [[ "$head" != "$key_name" ]]; then
+      continue
+    fi
+    while IFS='|' read -r segment; do
+      if [[ "$segment" == query_tokens=* ]]; then
+        payload="${segment#query_tokens=}"
+        while IFS=',' read -r token; do
+          token="$(printf '%s' "$token" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
+          [[ -n "$token" ]] && printf '%s\n' "$token"
+        done <<<"$payload"
+      fi
+    done <<<"$(printf '%s' "$mapping" | tr '|' '\n')"
+  done < <(yaml_get_list_field "$skill_meta" "input_mappings")
+}
+
 task_contract_get_task_alias() {
   local contracts_file="$1"
   local alias_name="$2"

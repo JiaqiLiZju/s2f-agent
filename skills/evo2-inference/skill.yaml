@@ -21,15 +21,24 @@ required_inputs:
   - hardware-context
   - execution-path
 optional_inputs:
-  - checkpoint-choice
-  - generation-params
-  - api-endpoint
+  - sequence-or-interval
+  - coordinate-or-interval
+  - ref-alt-or-variant-spec
+  - output-dir
+input_mappings:
+  - hardware-context|query_tokens=gpu,cuda,nvidia,h100,cpu,memory|script_flags=checkpoint-and-runtime-selection
+  - execution-path|query_tokens=local,hosted,api,nim,docker|script_flags=--api-url,local-vs-hosted-path
+  - sequence-or-interval|query_tokens=sequence,interval,fasta,start,end|script_flags=--sequence,--interval
+  - coordinate-or-interval|query_tokens=coordinate,position,pos,site,locus|script_flags=--variant-coordinate
+  - ref-alt-or-variant-spec|query_tokens=ref,alt,variant,mutation,>|script_flags=--variant-spec
+  - output-dir|query_tokens=output,outdir,目录|script_flags=--output-dir,--output-json
 required_env_any:
   - NVCF_RUN_KEY|EVO2_API_KEY
 constraints:
   - local-path-needs-linux-or-wsl2-plus-nvidia-cuda
   - fp8-checkpoints-need-transformer-engine-and-hopper-gpus
   - variant-effect-is-ref-alt-proxy-not-predict-variant-api
+  - interval-flag-is-0based-half-open-variant-coordinate-flag-is-1based-single-site
 tools:
   - scripts/run_hosted_api.py
   - scripts/run_real_evo2_workflow.py

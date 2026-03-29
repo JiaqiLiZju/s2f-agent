@@ -15,14 +15,22 @@ triggers:
   - predict_variant
 required_inputs:
   - assembly
-  - chrom
-  - interval-or-variant
+  - coordinate-or-interval
+  - ref-alt-or-variant-spec
 optional_inputs:
-  - requested_outputs
-  - ontology_terms
+  - sequence-or-interval
+  - requested-outputs
+  - ontology-terms
   - output-dir
   - runtime-context
   - network-proxy-endpoint
+input_mappings:
+  - assembly|query_tokens=assembly,hg38,hg19,mm10,chm13|script_flags=--assembly
+  - coordinate-or-interval|query_tokens=chr,coordinate,position,pos,site,locus,位点,坐标|script_flags=--coordinate,--chrom,--position
+  - ref-alt-or-variant-spec|query_tokens=ref,alt,variant,mutation,突变,变异,>|script_flags=--variant-spec,--alt
+  - output-dir|query_tokens=output,outdir,目录|script_flags=--output-dir
+  - requested-outputs|query_tokens=requested_outputs,output,modality|script_flags=internal:requested_outputs
+  - ontology-terms|query_tokens=ontology,uberon,tissue,组织|script_flags=internal:ontology_terms
 required_env:
   - ALPHAGENOME_API_KEY
 optional_env:
@@ -34,6 +42,7 @@ constraints:
   - keep-interval-at-or-below-1Mbp
   - use-grounded-API-surface-only
   - set-timeout-and-proxy-fallback-for-real-runs
+  - variant-coordinate-is-1based-single-site
 tools: []
 tool_contracts: []
 priority_rules:

@@ -58,6 +58,7 @@ make bootstrap-persistent PREFETCH_MODELS=1
 | --- | --- | --- |
 | Skill-grounded execution | Domain-specific guidance for genomics model families and workflows | `skills/*/SKILL.md`, `skills-dev/*/SKILL.md` |
 | Deterministic routing | Ranked skill selection with `route` / `clarify` decision and confidence | `scripts/route_query.sh`, `registry/routing.yaml` |
+| Canonical input schema | Shared canonical input keys, aliases, and coordinate conventions | `registry/input_schema.yaml`, `scripts/validate_input_contracts.sh` |
 | Task-contract checks | Detects missing required inputs before execution guidance | `scripts/run_agent.sh`, `registry/task_contracts.yaml` |
 | Plan standardization | Emits normalized task plans with runnable steps and expected outputs | `scripts/run_agent.sh`, `registry/output_contracts.yaml`, `registry/recovery_policies.yaml` |
 | Plan execution | Dry-run or execute generated steps and verify expected outputs | `scripts/execute_plan.sh` |
@@ -188,6 +189,7 @@ Contract-first references:
 - [`playbooks/track-prediction/README.md`](./playbooks/track-prediction/README.md)
 - [`playbooks/fine-tuning/README.md`](./playbooks/fine-tuning/README.md)
 - [`playbooks/environment-setup/README.md`](./playbooks/environment-setup/README.md)
+- [`registry/input_schema.yaml`](./registry/input_schema.yaml)
 
 Step-by-step tutorials:
 

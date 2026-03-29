@@ -19,13 +19,20 @@ required_inputs:
 optional_inputs:
   - assembly
   - output-head
-  - model-id
+  - output-dir
+input_mappings:
+  - species|query_tokens=species,human,mouse|script_flags=--species
+  - sequence-or-interval|query_tokens=sequence,interval,fasta,start,end|script_flags=--interval,--chrom,--start,--end
+  - assembly|query_tokens=assembly,hg38,hg19,mm10,chm13|script_flags=--assembly
+  - output-head|query_tokens=head,track,bigwig,bed,trackplot,轨道|script_flags=posttrained-track-head-selection
+  - output-dir|query_tokens=output,outdir,目录|script_flags=--output-dir
 required_env:
   - HF_TOKEN
 constraints:
   - input-length-must-follow-divisibility-rules
   - center-crop-head-output-may-apply
   - hf-first-path-recommended
+  - interval-is-0based-half-open-ucsc-fetched
 tools:
   - scripts/check_valid_length.py
   - scripts/run_track_prediction.py

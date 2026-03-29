@@ -1,0 +1,329 @@
+schema_version: 1
+updated_at: "2026-03-29"
+
+coordinate_conventions:
+  interval:
+    default: "0-based [start, end)"
+    accepted:
+      - "0-based [start, end)"
+      - "1-based closed (must be explicit)"
+  single_site:
+    default: "1-based"
+    accepted:
+      - "1-based"
+  assembly_aliases:
+    hg19: GRCh37
+    hg38: GRCh38
+    mm10: GRCm38
+    chm13: T2T-CHM13
+
+legacy_key_map:
+  sequence: sequence-or-interval
+  coordinate: coordinate-or-interval
+  variant-spec: ref-alt-or-variant-spec
+  interval-or-variant: coordinate-or-interval
+
+inputs:
+  - key: target-stack-or-model-family
+    type: string
+    query_tokens:
+      - stack
+      - model
+      - family
+      - ntv3
+      - evo2
+      - gpn
+      - alphagenome
+      - borzoi
+    examples:
+      - "ntv3"
+      - "evo2 hosted"
+
+  - key: runtime-context
+    type: string
+    query_tokens:
+      - linux
+      - mac
+      - windows
+      - wsl
+      - docker
+      - conda
+      - runtime
+    examples:
+      - "mac + conda"
+      - "linux docker"
+
+  - key: hardware-context
+    type: string
+    query_tokens:
+      - gpu
+      - cuda
+      - nvidia
+      - h100
+      - cpu
+      - memory
+      - batch
+    examples:
+      - "single A100"
+      - "cpu only"
+
+  - key: sequence-or-interval
+    type: union
+    subtypes:
+      - name: raw-sequence
+        query_tokens: [sequence, fasta, 序列]
+      - name: genomic-interval
+        query_tokens: [interval, chr, start, end, 区间, 区域]
+    query_tokens:
+      - sequence
+      - interval
+      - fasta
+      - 序列
+      - 区间
+      - 区域
+    examples:
+      - "chr19:6700000-6732768"
+      - "ACGTACGT..."
+
+  - key: embedding-target
+    type: enum
+    query_tokens:
+      - embedding
+      - pooled
+      - token
+      - representation
+      - 向量
+      - 嵌入
+    examples:
+      - "pooled embedding"
+      - "token embeddings"
+
+  - key: species
+    type: enum
+    query_tokens:
+      - species
+      - human
+      - mouse
+      - 物种
+      - 人
+      - 小鼠
+    examples:
+      - "human"
+      - "mouse"
+
+  - key: assembly
+    type: enum
+    query_tokens:
+      - assembly
+      - hg38
+      - hg19
+      - mm10
+      - chm13
+      - grch38
+      - grch37
+      - 基因组版本
+    examples:
+      - "hg38"
+      - "hg19"
+      - "mm10"
+
+  - key: coordinate-or-interval
+    type: union
+    subtypes:
+      - name: single-site
+        coordinate_system: "1-based"
+        query_tokens: [coordinate, position, pos, site, locus, 位点, 坐标]
+      - name: variant-interval
+        coordinate_system: "0-based [start, end)"
+        query_tokens: [coordinate, interval, chr, start, end, 区间]
+    query_tokens:
+      - coordinate
+      - position
+      - pos
+      - site
+      - locus
+      - chr
+      - 位点
+      - 坐标
+    examples:
+      - "chr12:1000000  # single-site, 1-based"
+      - "chr19:6700000-6732768  # interval, 0-based half-open"
+
+  - key: ref-alt-or-variant-spec
+    type: string
+    query_tokens:
+      - ref
+      - alt
+      - variant
+      - mutation
+      - ">"
+      - 突变
+      - 变异
+    examples:
+      - "REF A ALT G"
+      - "T>G"
+
+  - key: task-objective
+    type: string
+    query_tokens:
+      - objective
+      - classification
+      - regression
+      - training
+      - fine-tuning
+      - 目标
+    examples:
+      - "binary classification"
+      - "track prediction"
+
+  - key: dataset-schema
+    type: string
+    query_tokens:
+      - csv
+      - schema
+      - columns
+      - label
+      - 数据集
+      - 字段
+    examples:
+      - "sequence,label"
+      - "seq1,seq2,label"
+
+  - key: compute-constraints
+    type: string
+    query_tokens:
+      - gpu
+      - cpu
+      - memory
+      - budget
+      - runtime
+      - 预算
+      - 时长
+    examples:
+      - "single 24GB GPU"
+      - "cpu within 2h"
+
+  - key: output-head
+    type: string
+    query_tokens:
+      - head
+      - track
+      - trackplot
+      - bigwig
+      - bed
+      - output
+      - 轨道
+      - 绘图
+    examples:
+      - "RNA_SEQ"
+      - "bigwig tracks"
+
+  - key: failing-step-or-error
+    type: string
+    query_tokens:
+      - error
+      - fail
+      - issue
+      - traceback
+      - cannot
+      - 报错
+      - 失败
+    examples:
+      - "HF token unauthorized"
+      - "grpc timeout"
+
+  - key: model-family-objective
+    type: string
+    query_tokens:
+      - model family
+      - gpn
+      - phylogpn
+      - gpn-star
+      - framework
+    examples:
+      - "choose between GPN and GPN-Star"
+
+  - key: objective
+    type: string
+    query_tokens:
+      - objective
+      - task
+      - variant
+      - embedding
+      - prediction
+    examples:
+      - "variant scoring"
+
+  - key: execution-path
+    type: enum
+    query_tokens:
+      - local
+      - hosted
+      - api
+      - nim
+      - docker
+    examples:
+      - "hosted api"
+      - "local gpu"
+
+  - key: family-choice
+    type: string
+    query_tokens:
+      - segmentnt
+      - segmentenformer
+      - segmentborzoi
+      - family
+      - 分支
+    examples:
+      - "segment_nt_multi_species"
+
+  - key: requested-outputs
+    type: list
+    query_tokens:
+      - requested_outputs
+      - output
+      - modality
+    examples:
+      - "RNA_SEQ"
+
+  - key: ontology-terms
+    type: list
+    query_tokens:
+      - ontology
+      - uberon
+      - tissue
+      - 组织
+    examples:
+      - "UBERON:0001157"
+
+  - key: output-dir
+    type: path
+    query_tokens:
+      - output
+      - outdir
+      - output-dir
+      - 目录
+    examples:
+      - "output/alphagenome"
+
+  - key: network-proxy-endpoint
+    type: string
+    query_tokens:
+      - proxy
+      - http_proxy
+      - https_proxy
+      - grpc_proxy
+      - 代理
+    examples:
+      - "http://127.0.0.1:7890"
+
+  - key: sequence
+    deprecated: true
+    replaced_by: sequence-or-interval
+    type: string
+    query_tokens:
+      - sequence
+      - fasta
+      - 序列
+    examples:
+      - "ACGT..."

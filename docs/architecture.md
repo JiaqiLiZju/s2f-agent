@@ -7,6 +7,7 @@ This repository now follows a layered design:
 1. `agent/`: orchestrator behavior and routing policy.
 2. `registry/`: machine-readable skill index and tag mapping.
    - includes `routing.yaml` (scoring, confidence, alias rules)
+   - includes `input_schema.yaml` (canonical input keys, aliases, coordinate conventions)
    - includes `task_contracts.yaml` (task-level required input contracts)
    - includes `output_contracts.yaml` (task-level output-plan contract schema)
    - includes `recovery_policies.yaml` (retry and fallback defaults)
@@ -47,6 +48,8 @@ Benefits:
 - Runtime router returns a structured `decision` (`route` or `clarify`) plus confidence.
 - Full orchestration output can be executed with `scripts/run_agent.sh`.
 - `run_agent.sh` prefers task-level required inputs from `registry/task_contracts.yaml` and falls back to skill-level contracts.
+- `run_agent.sh` now emits canonical input status fields (`required_inputs_canonical`, `provided_inputs_canonical`, `missing_inputs_canonical`) while preserving legacy fields.
 - `run_agent.sh` now emits a normalized `plan` object for core tasks.
 - `scripts/execute_plan.sh` executes or dry-runs `plan.runnable_steps` and validates expected outputs.
 - Skill metadata consistency can be checked with `scripts/validate_skill_metadata.sh`.
+- Input contract consistency across task contracts, stable `skill.yaml`, and canonical schema can be checked with `scripts/validate_input_contracts.sh`.

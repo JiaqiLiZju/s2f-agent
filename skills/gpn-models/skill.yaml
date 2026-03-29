@@ -19,13 +19,23 @@ triggers:
 required_inputs:
   - model-family-objective
 optional_inputs:
-  - alignment-availability
-  - schema-columns
-  - compute-path
+  - assembly
+  - coordinate-or-interval
+  - ref-alt-or-variant-spec
+  - dataset-schema
+  - compute-constraints
+input_mappings:
+  - model-family-objective|query_tokens=model,family,gpn,phylogpn,gpn-star,gpn-msa|script_flags=model-family-selection
+  - assembly|query_tokens=assembly,hg38,hg19,mm10|script_flags=--assembly
+  - coordinate-or-interval|query_tokens=coordinate,position,pos,site,locus,chr|script_flags=--chrom,--pos,--start,--end
+  - ref-alt-or-variant-spec|query_tokens=ref,alt,variant,mutation,>|script_flags=--ref,--alt
+  - dataset-schema|query_tokens=schema,columns,chrom,start,end,pos,ref,alt|script_flags=gpn.ss-column-check
+  - compute-constraints|query_tokens=gpu,cpu,memory,batch,budget|script_flags=runtime-path-selection
 constraints:
   - gpn-msa-deprecated-in-favor-of-gpn-star
   - alignment-requirement-varies-by-family
   - verify-schema-for-gpn-ss-commands
+  - variant-pos-is-1based-chrom-pos-separate-flags
 tools:
   - references/predict_variant_single_site.py
 tool_contracts:

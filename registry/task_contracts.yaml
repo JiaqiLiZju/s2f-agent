@@ -1,43 +1,72 @@
 schema_version: 1
-updated_at: "2026-03-27"
+updated_at: "2026-03-29"
 task_aliases:
   setup: environment-setup
   general-troubleshooting: troubleshooting
 contracts:
   environment-setup:
+    canonical_required_inputs:
+      - target-stack-or-model-family
+      - runtime-context
+      - hardware-context
     required_inputs:
       - target-stack-or-model-family
       - runtime-context
       - hardware-context
   embedding:
+    canonical_required_inputs:
+      - sequence-or-interval
+      - embedding-target
     required_inputs:
       - sequence-or-interval
       - embedding-target
   variant-effect:
+    canonical_required_inputs:
+      - assembly
+      - coordinate-or-interval
+      - ref-alt-or-variant-spec
     required_inputs:
       - assembly
       - coordinate-or-interval
       - ref-alt-or-variant-spec
   fine-tuning:
+    canonical_required_inputs:
+      - task-objective
+      - dataset-schema
+      - compute-constraints
     required_inputs:
       - task-objective
       - dataset-schema
       - compute-constraints
   track-prediction:
+    canonical_required_inputs:
+      - species
+      - assembly
+      - sequence-or-interval
+      - output-head
     required_inputs:
       - species
       - assembly
       - sequence-or-interval
       - output-head
   troubleshooting:
+    canonical_required_inputs:
+      - failing-step-or-error
+      - runtime-context
     required_inputs:
       - failing-step-or-error
       - runtime-context
   loading:
+    canonical_required_inputs:
+      - model-family-objective
+      - runtime-context
     required_inputs:
       - model-family-objective
       - runtime-context
   framework-selection:
+    canonical_required_inputs:
+      - model-family-objective
+      - objective
     required_inputs:
       - model-family-objective
       - objective

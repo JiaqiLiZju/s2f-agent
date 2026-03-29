@@ -1,4 +1,7 @@
 .DS_Store
+.claude
+.pycache/
+__pycache__/
 Readme/
 output/
 skills-dev/
