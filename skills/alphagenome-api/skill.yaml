@@ -23,6 +23,12 @@ optional_inputs:
   - output-dir
   - runtime-context
   - network-proxy-endpoint
+required_env:
+  - ALPHAGENOME_API_KEY
+optional_env:
+  - http_proxy
+  - https_proxy
+  - grpc_proxy
 constraints:
   - python>=3.10
   - keep-interval-at-or-below-1Mbp

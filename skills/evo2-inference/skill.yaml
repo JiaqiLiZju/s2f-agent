@@ -24,6 +24,8 @@ optional_inputs:
   - checkpoint-choice
   - generation-params
   - api-endpoint
+required_env_any:
+  - NVCF_RUN_KEY|EVO2_API_KEY
 constraints:
   - local-path-needs-linux-or-wsl2-plus-nvidia-cuda
   - fp8-checkpoints-need-transformer-engine-and-hopper-gpus

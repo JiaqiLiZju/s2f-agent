@@ -20,6 +20,8 @@ optional_inputs:
   - assembly
   - output-head
   - model-id
+required_env:
+  - HF_TOKEN
 constraints:
   - input-length-must-follow-divisibility-rules
   - center-crop-head-output-may-apply

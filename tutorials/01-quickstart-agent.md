@@ -62,6 +62,7 @@ Expected output checkpoint:
 - `error: query is required` -> add `--query "..."` or provide stdin.
 - `decision: clarify` on broad input -> add `--task` and required input details.
 - `$alphagenome-api` becomes malformed in query -> wrap query in single quotes.
+- `error: env precheck failed for skill ...` on `execute_plan.sh --run` -> provide required env vars in process env or repo `.env` before rerunning.
 
 ## Related Playbook
 

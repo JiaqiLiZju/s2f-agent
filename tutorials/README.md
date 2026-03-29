@@ -21,6 +21,13 @@ This folder provides a step-by-step learning path for using the `s2f` agent.
 ./scripts/link_skills.sh
 ```
 
+Environment variable precheck is enforced for `execute_plan.sh --run` when the routed skill defines env contracts in `skill.yaml`.
+Current first-rollout contracts:
+
+- `alphagenome-api`: `ALPHAGENOME_API_KEY`
+- `nucleotide-transformer-v3`: `HF_TOKEN`
+- `evo2-inference`: one-of `NVCF_RUN_KEY` or `EVO2_API_KEY`
+
 ## Expected Outcomes
 
 After completing this tutorial set, you should be able to:
