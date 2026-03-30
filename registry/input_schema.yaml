@@ -317,6 +317,43 @@ inputs:
     examples:
       - "http://127.0.0.1:7890"
 
+  - key: vcf-input
+    type: path
+    query_tokens:
+      - vcf
+      - variant_call_format
+      - .vcf
+      - vcf文件
+    examples:
+      - "case-study/Test.geuvadis.vcf"
+
+  - key: vcf-info-passthrough
+    type: enum
+    values: [none, af, af_gene, all]
+    query_tokens:
+      - info
+      - passthrough
+      - annotation
+      - af
+      - 注释透传
+    examples:
+      - "all"
+      - "af"
+
+  - key: indel-handling
+    type: enum
+    values: [skip, record_skip, predict]
+    query_tokens:
+      - indel
+      - insertion
+      - deletion
+      - non-snp
+      - 插入
+      - 缺失
+    examples:
+      - "predict"
+      - "skip"
+
   - key: sequence
     deprecated: true
     replaced_by: sequence-or-interval

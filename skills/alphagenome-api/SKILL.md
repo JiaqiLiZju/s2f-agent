@@ -67,6 +67,42 @@ Verify any other method, output enum, or helper against the installed package or
 - Push back on large-batch workloads that exceed the README guidance.
 - Redact secrets in examples and transcripts; never echo API keys.
 
+## Batch VCF Prediction
+
+Use `scripts/run_alphagenome_vcf_batch.py` for multi-variant, multi-tissue batch prediction from a standard VCF file.
+
+**Key behaviours:**
+- Accepts any standard VCF (CHROM with or without `chr` prefix; POS is 1-based)
+- Supports SNP, INS, DEL, and MNP; multi-allelic ALT uses the first allele
+- Transparently passes through all VCF INFO fields as output columns (two-pass collection)
+- Adds `variant_type` column (SNP / INS / DEL / MNP)
+- Outputs per-tissue `{tissue}_mean_diff` and `{tissue}_log2fc` for all 8 tissues in `TISSUE_DICT`
+- Supports `--resume` (skip already-completed variants), `--limit N` (debug subset), `--interval-width` (16384 / 131072 / 524288 / 1048576)
+
+**Invocation:**
+```bash
+python skills/alphagenome-api/scripts/run_alphagenome_vcf_batch.py \
+  --input path/to/variants.vcf \
+  --assembly hg38 \
+  --output-dir output/alphagenome \
+  [--tissues path/to/tissues.json]  # or inline JSON, or omit for interactive prompt
+  [--non-interactive]               # skip prompt, use default 8 tissues
+  [--interval-width 16384]          # 16384 / 131072 / 524288 / 1048576
+  [--limit 10] \
+  [--resume]
+```
+
+**Tissue config format** (`--tissues`):
+```json
+{
+  "Neuronal_stem_cell": "CL:0000047",
+  "Whole_Blood": "UBERON:0013756"
+}
+```
+Omit `--tissues` to get an interactive prompt listing defaults; user can confirm or supply a JSON path.
+
+**Output columns:** `vid, chrom, position, ref, alt, variant_type, assembly, interval_start, interval_end` + all INFO keys (sorted) + `{tissue}_mean_diff / {tissue}_log2fc` × 8 tissues + `status, error, run_time_utc`
+
 ## References
 
 - Read [references/quickstart.md](references/quickstart.md) for installation and minimal setup.
