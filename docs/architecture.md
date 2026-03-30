@@ -53,3 +53,13 @@ Benefits:
 - `scripts/execute_plan.sh` executes or dry-runs `plan.runnable_steps` and validates expected outputs.
 - Skill metadata consistency can be checked with `scripts/validate_skill_metadata.sh`.
 - Input contract consistency across task contracts, stable `skill.yaml`, and canonical schema can be checked with `scripts/validate_input_contracts.sh`.
+
+## See Also
+
+- [Routing Reference](./routing.md) — scoring weights, confidence thresholds, task aliases, task-to-skill defaults
+- [Input Schema Reference](./input-schema.md) — all 22 canonical input keys, coordinate conventions, assembly aliases
+- [Contracts Reference](./contracts.md) — task contracts, output contracts, and recovery policies
+- [Skill Catalog](./skills-reference.md) — all 11 skills with families, tasks, triggers, and status
+- [Scripts Reference](./scripts-reference.md) — all 19 scripts with purpose, flags, and dependency map
+- [Safety Rules](./safety.md) — credential handling, execution risk controls, scientific guardrails
+- [Evals and Validation](./evals.md) — eval suites, validation scripts, and how to add cases
