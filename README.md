@@ -1,21 +1,14 @@
-# s2f-skills
+# s2f-agent
 
-`s2f-skills` is an academically oriented, execution-ready repository for computational genomics workflows with Codex.
+`s2f-agent` is a skill-routing agent for computational genomics. It turns open-ended research questions into deterministic, runnable analysis plans across 11 model families — covering variant-effect prediction, sequence embedding, track prediction, fine-tuning, and environment setup.
 
-It combines grounded skill packages, deterministic routing, task-level input contracts, reproducible environment setup scripts, and validation/evaluation tooling so research questions can be translated into runnable analysis with lower setup variance.
+[![CI](https://github.com/JiaqiLiZju/s2f-agent/actions/workflows/agent-ci.yml/badge.svg)](https://github.com/JiaqiLiZju/s2f-agent/actions/workflows/agent-ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![Shell](https://img.shields.io/badge/shell-bash-lightgrey)
 
 ## Start Here
 
-For a first successful run on a machine that already has this repo cloned:
-
-```bash
-./scripts/link_skills.sh
-./scripts/route_query.sh --query "Use \$dnabert2 to validate my train/dev/test CSV files"
-./scripts/run_agent.sh --query "Need variant-effect guidance for chr12 REF/ALT"
-./scripts/smoke_test.sh --skills-dir "${CODEX_HOME:-$HOME/.codex}/skills"
-```
-
-For a fresh-machine bootstrap (recommended):
+Fresh-machine bootstrap (recommended):
 
 ```bash
 ./scripts/bootstrap.sh
@@ -23,21 +16,30 @@ For a fresh-machine bootstrap (recommended):
 make bootstrap
 ```
 
-For one-time persistent setup (recommended for long-term reuse across sessions/repo updates):
+One-time persistent setup (keeps envs and model caches across sessions):
 
 ```bash
 ./scripts/bootstrap.sh \
-  --persistent-root "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills" \
+  --persistent-root "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-agent" \
   --prefetch-models
 
 # load the generated runtime env in new shells
-source "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills/env.sh"
+source "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-agent/env.sh"
 ```
 
 Equivalent Make target:
 
 ```bash
 make bootstrap-persistent PREFETCH_MODELS=1
+```
+
+First run after bootstrap:
+
+```bash
+./scripts/link_skills.sh
+./scripts/route_query.sh --query "Use \$dnabert2 to validate my train/dev/test CSV files"
+./scripts/run_agent.sh --query "Need variant-effect guidance for chr12 REF/ALT"
+./scripts/smoke_test.sh --skills-dir "${CODEX_HOME:-$HOME/.codex}/skills"
 ```
 
 ## Table of Contents
@@ -49,7 +51,7 @@ make bootstrap-persistent PREFETCH_MODELS=1
 - [Routing and Agent Runtime](#routing-and-agent-runtime)
 - [Installation and Deployment](#installation-and-deployment)
 - [Validation and Troubleshooting](#validation-and-troubleshooting)
-- [Maintainers](#maintainers)
+- [Contributing](#contributing)
 - [Star History](#star-history)
 
 ## Functional Capabilities
@@ -98,14 +100,14 @@ Status definition:
 | `nucleotide-transformer` | Dev | `skills-dev/nucleotide-transformer` | Classic NT v1/v2 JAX inference, tokenization, embeddings | `$nucleotide-transformer` | [`SKILL.md`](./skills-dev/nucleotide-transformer/SKILL.md) · [`references/`](./skills-dev/nucleotide-transformer/references/) |
 | `nucleotide-transformer-v3` | Stable | `skills/nucleotide-transformer-v3` | NTv3 inference, species conditioning, length-aware runs | `$nucleotide-transformer-v3` | [`SKILL.md`](./skills/nucleotide-transformer-v3/SKILL.md) · [`references/`](./skills/nucleotide-transformer-v3/references/) |
 | `segment-nt` | Stable | `skills/segment-nt` | SegmentNT-family segmentation inference and scaling logic | `$segment-nt` | [`SKILL.md`](./skills/segment-nt/SKILL.md) · [`references/`](./skills/segment-nt/references/) |
-| `skill-factory` | Dev | `skills-dev/skill-factory` | Scaffold and validate consistent skill packages from specs | `$skill-factory` | [`SKILL.md`](./skills-dev/skill-factory/SKILL.md) · [`references/`](./skills-dev/skill-factory/references/) |
+| `skill-factory` | Stable | `skills/skill-factory` | Scaffold and validate consistent skill packages from specs | `$skill-factory` | [`SKILL.md`](./skills/skill-factory/SKILL.md) · [`references/`](./skills/skill-factory/references/) |
 
 Reference notes used during skill development are in [`Readme/`](./Readme/).
 
 ## Repository Structure
 
 ```text
-s2f-skills/
+s2f-agent/
 ├── agent/                  # orchestrator identity, routing and safety policy
 ├── registry/               # skills index, tags, routing/task/output/recovery contracts
 ├── skills/                 # canonical stable skill packages
@@ -271,14 +273,14 @@ One-time persistent install (keeps deploy envs and caches in a stable location):
 
 ```bash
 ./scripts/bootstrap.sh \
-  --persistent-root "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills" \
+  --persistent-root "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-agent" \
   --prefetch-models
 ```
 
 After first setup, load the generated env in new shells:
 
 ```bash
-source "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills/env.sh"
+source "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-agent/env.sh"
 ```
 
 Optional one-step variants:
@@ -305,7 +307,7 @@ Prefetch model parameters separately (if environments are already prepared):
 ```bash
 make prefetch-models
 # or
-./scripts/prefetch_models.sh --deploy-root "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-skills/deploy"
+./scripts/prefetch_models.sh --deploy-root "${XDG_CACHE_HOME:-$HOME/.cache}/s2f-agent/deploy"
 ```
 
 One-click cleanup for configured environments and temporary files:
@@ -423,17 +425,12 @@ Extended smoke test with explicit environment imports:
 
 When a workflow fails, start from the skill's `references/` folder and then check routing/task configuration under `registry/`.
 
-## Maintainers
+## Contributing
 
-When extending this repository:
-
-- keep `SKILL.md` concise and operational
-- move detailed guidance to `references/`
-- add scripts only for repeated logic worth encoding
-- keep `skill.yaml` and `agents/openai.yaml` aligned with scope
-- update `registry/skills.yaml` when adding, moving, or disabling a skill
-- run validation (`make validate-agent`) before publishing
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to add skills, run validation, and submit pull requests.
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=JiaqiLiZju/s2fm_agent&type=Date)](https://star-history.com/#JiaqiLiZju/s2fm_agent&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=JiaqiLiZju/s2f-agent&type=Date)](https://star-history.com/#JiaqiLiZju/s2f-agent&Date)
+ENDOFFILE",
+  "description": "Append remaining README content
