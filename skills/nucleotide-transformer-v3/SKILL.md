@@ -51,6 +51,7 @@ Use this skill for NTv3 only.
 
 8. Use the reusable track-prediction script for full workflows.
 - For region-level track prediction + plotting, prefer [scripts/run_track_prediction.py](scripts/run_track_prediction.py) instead of rewriting notebook cells.
+- For BED batch workflows, use [scripts/run_track_prediction_bed_batch.py](scripts/run_track_prediction_bed_batch.py).
 
 ## Real Track Prediction Fastpath
 
@@ -99,12 +100,33 @@ conda run -n ntv3 python skills/nucleotide-transformer-v3/scripts/run_track_pred
   2>&1 | tee output/ntv3_results/ntv3_run.log
 ```
 
+BED batch fastpath:
+
+```bash
+set -a; source .env; set +a
+mkdir -p case-study/track_prediction/ntv3_results
+conda run -n ntv3 python skills/nucleotide-transformer-v3/scripts/run_track_prediction_bed_batch.py \
+  --bed case-study/track_prediction/bed/Test.interval.bed \
+  --model InstaDeepAI/NTv3_100M_post \
+  --species human \
+  --assembly hg38 \
+  --output-dir case-study/track_prediction/ntv3_results \
+  2>&1 | tee case-study/track_prediction/ntv3_results/ntv3_bed_batch.log
+```
+
+Batch behavior:
+
+- Each interval retries once with `--disable-xet` on failure.
+- Batch continues even if some intervals fail.
+- Batch always exits `0`; inspect `ntv3_bed_batch_summary.json` for `failed_count`.
+
 Acceptance checklist:
 
 - Log contains `loading config/tokenizer/model from HF`.
 - Log contains `saved plot:` and `saved meta:`.
 - `*_trackplot.png` exists.
-- `*_meta.json` exists with expected `species/assembly/chrom/start/end`.
+- `*_result.json` exists with expected `species/assembly/chrom/start/end`.
+- BED mode writes `ntv3_bed_batch_summary.json` with per-interval success/failure details.
 
 ## Grounded API Surface
 
@@ -176,3 +198,4 @@ Do not invent alternate wrappers or training code from this skill alone.
 - Read [references/length-and-memory.md](references/length-and-memory.md) for divisibility, padding, and precision guidance.
 - Use [scripts/check_valid_length.py](scripts/check_valid_length.py) to validate concrete input lengths.
 - Use [scripts/run_track_prediction.py](scripts/run_track_prediction.py) for region-level prediction and plotting.
+- Use [scripts/run_track_prediction_bed_batch.py](scripts/run_track_prediction_bed_batch.py) for BED batch prediction.

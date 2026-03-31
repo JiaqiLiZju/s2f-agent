@@ -22,7 +22,7 @@ optional_inputs:
   - output-dir
 input_mappings:
   - species|query_tokens=species,human,mouse|script_flags=--species
-  - sequence-or-interval|query_tokens=sequence,interval,fasta,start,end|script_flags=--interval,--chrom,--start,--end
+  - sequence-or-interval|query_tokens=sequence,interval,fasta,start,end,bed,.bed,file,path|script_flags=--interval,--chrom,--start,--end,--bed
   - assembly|query_tokens=assembly,hg38,hg19,mm10,chm13|script_flags=--assembly
   - output-head|query_tokens=head,track,bigwig,bed,trackplot,轨道|script_flags=posttrained-track-head-selection
   - output-dir|query_tokens=output,outdir,目录|script_flags=--output-dir
@@ -36,6 +36,7 @@ constraints:
 tools:
   - scripts/check_valid_length.py
   - scripts/run_track_prediction.py
+  - scripts/run_track_prediction_bed_batch.py
 tool_contracts:
   - tool: scripts/check_valid_length.py
     inputs:
@@ -51,6 +52,17 @@ tool_contracts:
       - species-assembly-and-interval
     outputs:
       - track-plot-and-metadata
+    side_effects:
+      - writes-output-artifacts
+    failure_codes:
+      - 1
+  - tool: scripts/run_track_prediction_bed_batch.py
+    inputs:
+      - bed-intervals
+      - species-assembly-and-output-dir
+    outputs:
+      - per-interval-track-plots-and-result-json
+      - ntv3-batch-summary-json
     side_effects:
       - writes-output-artifacts
     failure_codes:

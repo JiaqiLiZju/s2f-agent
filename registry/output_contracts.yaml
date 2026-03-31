@@ -73,7 +73,7 @@ contracts:
       - awk 'NR<=120{print}' playbooks/track-prediction/README.md
     expected_outputs:
       - plan-json:track-prediction
-      - expected-file:track-prediction-metadata.json
+      - expected-file:track-prediction-result.json
       - expected-plot:track-prediction.png
     fallbacks:
       - fallback-to-secondary-track-skill

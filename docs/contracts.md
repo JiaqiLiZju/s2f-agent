@@ -67,7 +67,7 @@ For the four core executable tasks, the output contract defines the expected sha
 |---|---|
 | `assumptions` | species-and-assembly-must-be-provided, output-head-definition-must-match-selected-model |
 | `runnable_steps` | `bash scripts/run_agent.sh --task track-prediction --query {selected_skill}-track-prediction-workflow` |
-| `expected_outputs` | plan-json:track-prediction, track-prediction-metadata.json, track-prediction.png |
+| `expected_outputs` | plan-json:track-prediction, track-prediction-result.json, track-prediction.png |
 | `fallbacks` | fallback-to-secondary-track-skill |
 | `retry_policy` | clarify-then-single-retry |
 

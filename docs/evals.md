@@ -109,6 +109,14 @@ Each case runs the agent and asserts the normalized plan meets minimum quality t
   min_expected_outputs: 3
   required_step_contains: "conda run -n ntv3 python skills/nucleotide-transformer-v3/scripts/run_track_prediction.py"
   required_expected_output_contains: "output/ntv3_results"
+
+- id: task_success_011
+  query: "...ntv3 track prediction batch for case-study/track_prediction/bed/Test.interval.bed..."
+  task: track-prediction
+  min_runnable_steps: 1
+  min_expected_outputs: 4
+  required_step_contains: "run_track_prediction_bed_batch.py"
+  required_expected_output_contains: "ntv3_bed_batch_summary.json"
 ```
 
 Fields:

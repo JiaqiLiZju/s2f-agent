@@ -441,10 +441,30 @@ extract_ntv3_interval_from_query() {
   printf '\n'
 }
 
+extract_ntv3_bed_path_from_query() {
+  local query_raw="$1"
+  local bed_path=""
+  bed_path="$(printf '%s\n' "$query_raw" | grep -Eo '[/A-Za-z0-9._~-]+\.bed' | head -n 1 || true)"
+  if [[ -z "$bed_path" ]]; then
+    printf '\n'
+    return 0
+  fi
+  bed_path="$(printf '%s\n' "$bed_path" | sed -E "s/^[\"'()]+//; s/[\"'(),;:。；，]+$//")"
+  printf '%s\n' "$bed_path"
+}
+
 extract_ntv3_output_dir_from_query() {
   local query_raw="$1"
   local out=""
-  out="$(printf '%s\n' "$query_raw" | grep -Eio 'output/[A-Za-z0-9._/-]+' | head -n 1 || true)"
+  out="$(printf '%s\n' "$query_raw" | grep -Eio 'case-study/[A-Za-z0-9._/-]*ntv3_results[A-Za-z0-9._/-]*' | head -n 1 || true)"
+  if [[ -z "$out" ]]; then
+    out="$(printf '%s\n' "$query_raw" | grep -Eio 'output/[A-Za-z0-9._/-]*ntv3_results[A-Za-z0-9._/-]*' | head -n 1 || true)"
+  fi
+  if [[ -z "$out" ]]; then
+    out="$(printf '%s\n' "$query_raw" | grep -Eio '[A-Za-z0-9._/-]*ntv3_results[A-Za-z0-9._/-]*' | head -n 1 || true)"
+  fi
+  out="$(printf '%s\n' "$out" | sed -E "s/^[\"'()]+//; s/[\"'(),;:。；，]+$//")"
+  out="${out%/.}"
   if [[ -z "$out" ]]; then
     out="output/ntv3_results"
   fi
@@ -1098,6 +1118,8 @@ fi
 if [[ "$effective_task" == "track-prediction" && "$primary_skill" == "nucleotide-transformer-v3" ]]; then
   ntv3_missing_non_head="$(remove_csv_item "$missing_csv" "output-head")"
   ntv3_interval_csv="$(extract_ntv3_interval_from_query "$query_lc")"
+  ntv3_bed_path="$(extract_ntv3_bed_path_from_query "$query")"
+  ntv3_bed_resolved=""
   ntv3_species="$(extract_ntv3_species_from_query "$query_lc")"
   ntv3_assembly="$(extract_ntv3_assembly_from_query "$query_lc")"
   ntv3_output_dir="$(extract_ntv3_output_dir_from_query "$query")"
@@ -1107,20 +1129,56 @@ if [[ "$effective_task" == "track-prediction" && "$primary_skill" == "nucleotide
   ntv3_end=""
   ntv3_prefix=""
   ntv3_plot_path=""
-  ntv3_meta_path=""
+  ntv3_result_path=""
   ntv3_log_path=""
+  ntv3_batch_summary_path=""
+  ntv3_batch_log_path=""
   ntv3_step_cmd=""
   ntv3_fallback_cmd=""
+
+  if [[ -n "$ntv3_bed_path" ]]; then
+    ntv3_bed_resolved="$ntv3_bed_path"
+    if [[ ! -f "$ntv3_bed_resolved" && -f "$REPO_ROOT/$ntv3_bed_resolved" ]]; then
+      ntv3_bed_resolved="$REPO_ROOT/$ntv3_bed_resolved"
+    fi
+    if in_csv_list "sequence-or-interval" "$missing_csv"; then
+      missing_csv="$(remove_csv_item "$missing_csv" "sequence-or-interval")"
+      provided_csv="$(append_csv "$provided_csv" "sequence-or-interval")"
+      plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "sequence-or-interval-inferred-from-bed-path")"
+    fi
+    if in_csv_list "sequence-or-interval" "$missing_canonical_csv"; then
+      missing_canonical_csv="$(remove_csv_item "$missing_canonical_csv" "sequence-or-interval")"
+      provided_canonical_csv="$(append_csv "$provided_canonical_csv" "sequence-or-interval")"
+    fi
+    ntv3_missing_non_head="$(remove_csv_item "$missing_csv" "output-head")"
+  fi
 
   if [[ -n "$ntv3_interval_csv" ]]; then
     IFS=',' read -r ntv3_chrom ntv3_start ntv3_end <<<"$ntv3_interval_csv"
   fi
 
-  if [[ -n "$ntv3_species" && -n "$ntv3_assembly" && -n "$ntv3_chrom" && -n "$ntv3_start" && -n "$ntv3_end" && -z "$ntv3_missing_non_head" ]]; then
+  if [[ -n "$ntv3_species" && -n "$ntv3_assembly" && -n "$ntv3_bed_path" && -z "$ntv3_missing_non_head" ]]; then
+    ntv3_batch_summary_path="${ntv3_output_dir}/ntv3_bed_batch_summary.json"
+    ntv3_batch_log_path="${ntv3_output_dir}/ntv3_bed_batch.log"
+    ntv3_step_cmd="set -a; source .env; set +a; mkdir -p ${ntv3_output_dir}; conda run -n ntv3 python skills/nucleotide-transformer-v3/scripts/run_track_prediction_bed_batch.py --bed ${ntv3_bed_resolved} --model ${ntv3_model} --species ${ntv3_species} --assembly ${ntv3_assembly} --output-dir ${ntv3_output_dir} 2>&1 | tee ${ntv3_batch_log_path}"
+
+    plan_steps_csv="$ntv3_step_cmd"
+    plan_expected_outputs_csv=""
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_batch_summary_path}")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_batch_log_path}")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-plot:${ntv3_output_dir}/ntv3_*_trackplot.png")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_output_dir}/ntv3_*_result.json")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_output_dir}/ntv3_*.log")"
+
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "ntv3-track-bed-batch-fastpath-enabled")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "partial-failures-recorded-in-summary")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "default-model:${ntv3_model}")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "default-output-dir:${ntv3_output_dir}")"
+  elif [[ -n "$ntv3_species" && -n "$ntv3_assembly" && -n "$ntv3_chrom" && -n "$ntv3_start" && -n "$ntv3_end" && -z "$ntv3_missing_non_head" ]]; then
     if [[ "$ntv3_end" =~ ^[0-9]+$ && "$ntv3_start" =~ ^[0-9]+$ && "$ntv3_end" -gt "$ntv3_start" ]]; then
       ntv3_prefix="ntv3_${ntv3_species}_${ntv3_assembly}_${ntv3_chrom}_${ntv3_start}_${ntv3_end}"
       ntv3_plot_path="${ntv3_output_dir}/${ntv3_prefix}_trackplot.png"
-      ntv3_meta_path="${ntv3_output_dir}/${ntv3_prefix}_meta.json"
+      ntv3_result_path="${ntv3_output_dir}/${ntv3_prefix}_result.json"
       ntv3_log_path="${ntv3_output_dir}/ntv3_run.log"
 
       ntv3_step_cmd="set -a; source .env; set +a; mkdir -p ${ntv3_output_dir}; conda run -n ntv3 python skills/nucleotide-transformer-v3/scripts/run_track_prediction.py --model ${ntv3_model} --species ${ntv3_species} --assembly ${ntv3_assembly} --interval ${ntv3_chrom}:${ntv3_start}-${ntv3_end} --output-dir ${ntv3_output_dir} 2>&1 | tee ${ntv3_log_path}"
@@ -1129,7 +1187,7 @@ if [[ "$effective_task" == "track-prediction" && "$primary_skill" == "nucleotide
       plan_steps_csv="$ntv3_step_cmd"
       plan_expected_outputs_csv=""
       plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-plot:${ntv3_plot_path}")"
-      plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_meta_path}")"
+      plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_result_path}")"
       plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_log_path}")"
       plan_fallbacks_csv="$(append_csv "$plan_fallbacks_csv" "$ntv3_fallback_cmd")"
 
