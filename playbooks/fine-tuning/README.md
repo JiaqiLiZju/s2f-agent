@@ -30,17 +30,7 @@ Optional context that improves execution quality:
 2. Prefer `bpnet` for profile-prediction-focused training stacks.
 3. Prefer `basset-workflows` only when legacy Torch7 compatibility is required.
 
-## Output Expectations (Mapped to Output Contract)
-
-For `fine-tuning` in `registry/output_contracts.yaml`, a high-quality response should map to:
-
-- `assumptions`: dataset schema validation and explicit evaluation artifact paths
-- `runnable_steps`: fine-tuning orchestration command chain
-- `expected_outputs`: train command and evaluation metrics artifacts
-- `fallbacks`: reduced-scope minimal training run
-- `retry_policy`: clarify dataset schema first, then retry once
-
-## Minimal Reproducible Commands
+## Runbook (Minimal Reproducible Commands)
 
 Text output:
 
@@ -60,14 +50,72 @@ bash scripts/run_agent.sh \
   --format json
 ```
 
-## Clarify Flow (When Inputs Are Missing)
+Dry-run execution validation:
+
+```bash
+bash scripts/execute_plan.sh \
+  --task fine-tuning \
+  --query 'Use $dnabert2 for binary classification fine-tuning with CSV labels and compute budget' \
+  --format text
+```
+
+## Learn (Step-by-step + checkpoints + common failures)
+
+Step 1: build a fine-tuning plan.
+
+```bash
+bash scripts/run_agent.sh \
+  --task fine-tuning \
+  --query 'Use $dnabert2 for binary classification with CSV schema and limited GPU budget' \
+  --format text
+```
+
+Expected checkpoint:
+
+- `decision: route` or focused `clarify`
+- `required_inputs` includes `task-objective`, `dataset-schema`, `compute-constraints`
+
+Step 2: review structured plan fields.
+
+```bash
+bash scripts/run_agent.sh \
+  --task fine-tuning \
+  --query 'Use $dnabert2 for binary classification with CSV schema and limited GPU budget' \
+  --format json
+```
+
+Expected checkpoint:
+
+- `plan.runnable_steps` exists
+- `plan.expected_outputs` includes train/eval artifact hints
+
+Step 3: validate dry-run execution path.
+
+```bash
+bash scripts/execute_plan.sh \
+  --task fine-tuning \
+  --query 'Use $dnabert2 for binary classification with CSV schema and limited GPU budget' \
+  --format text
+```
+
+Expected checkpoint:
+
+- summary indicates dry-run with no failures
+
+Common failure signatures and quick fixes:
+
+- `missing_inputs` includes `dataset-schema` -> state required columns and split assumptions.
+- `missing_inputs` includes `compute-constraints` -> specify GPU/CPU and budget limits.
+- low-confidence `clarify` decision -> keep explicit task plus skill hint in the query.
+
+## Clarify & Retry
 
 1. Read `missing_inputs` for any missing required key.
 2. Clarify `task-objective`, `dataset-schema`, and `compute-constraints` explicitly.
 3. Re-run with a concrete training objective and schema details.
 4. Validate plan readiness before running any training commands.
 
-## Matching Tutorial
+## Related Playbooks
 
-- [Fine-Tuning Tutorial](../../tutorials/05-fine-tuning.md)
-- [Troubleshooting and Clarify Tutorial](../../tutorials/06-troubleshooting-and-clarify.md)
+- [Getting Started](../getting-started/README.md)
+- [Troubleshooting](../troubleshooting/README.md)

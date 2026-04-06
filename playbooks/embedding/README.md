@@ -30,17 +30,7 @@ Optional context that improves execution quality:
 3. Prefer `nucleotide-transformer` only when classic NT v1/v2 JAX behavior is required.
 4. Prefer `evo2-inference` when hosted fallback is important.
 
-## Output Expectations (Mapped to Output Contract)
-
-For `embedding` in `registry/output_contracts.yaml`, a high-quality response should map to:
-
-- `assumptions`: tokenization/length compatibility and explicit embedding granularity
-- `runnable_steps`: embedding-oriented orchestration command chain
-- `expected_outputs`: embedding metadata and shape expectations
-- `fallbacks`: compatible secondary embedding skill path
-- `retry_policy`: clarify missing embedding target, then retry once
-
-## Minimal Reproducible Commands
+## Runbook (Minimal Reproducible Commands)
 
 Text output:
 
@@ -60,14 +50,73 @@ bash scripts/run_agent.sh \
   --format json
 ```
 
-## Clarify Flow (When Inputs Are Missing)
+Dry-run execution validation:
+
+```bash
+bash scripts/execute_plan.sh \
+  --task embedding \
+  --query 'Use $dnabert2 for pooled embedding on a genomic interval' \
+  --format text
+```
+
+## Learn (Step-by-step + checkpoints + common failures)
+
+Step 1: build an embedding plan.
+
+```bash
+bash scripts/run_agent.sh \
+  --task embedding \
+  --query 'Use $dnabert2 for pooled embedding on a genomic interval' \
+  --format text
+```
+
+Expected checkpoint:
+
+- `decision: route`
+- `task: embedding`
+- `required_inputs` includes `sequence-or-interval` and `embedding-target`
+
+Step 2: validate JSON structure.
+
+```bash
+bash scripts/run_agent.sh \
+  --task embedding \
+  --query 'Use $dnabert2 for pooled embedding on a genomic interval' \
+  --format json
+```
+
+Expected checkpoint:
+
+- `plan.assumptions` and `plan.runnable_steps` exist
+- `plan.retry_policy` is present
+
+Step 3: confirm dry-run behavior.
+
+```bash
+bash scripts/execute_plan.sh \
+  --task embedding \
+  --query 'Use $dnabert2 for pooled embedding on a genomic interval' \
+  --format text
+```
+
+Expected checkpoint:
+
+- dry-run summary prints no execution failures
+
+Common failure signatures and quick fixes:
+
+- `missing_inputs` includes `embedding-target` -> specify token-level or pooled target explicitly.
+- `missing_inputs` includes `sequence-or-interval` -> provide sequence text or interval coordinates.
+- command interpreted `$dnabert2` by shell -> use single quotes around query.
+
+## Clarify & Retry
 
 1. Inspect `missing_inputs` for `sequence-or-interval` and `embedding-target`.
 2. Clarify one missing input at a time with concrete examples.
 3. Re-run the same task query with clarified values.
 4. Confirm plan fields before downstream execution.
 
-## Matching Tutorial
+## Related Playbooks
 
-- [Embedding Tutorial](../../tutorials/03-embedding.md)
-- [Troubleshooting and Clarify Tutorial](../../tutorials/06-troubleshooting-and-clarify.md)
+- [Getting Started](../getting-started/README.md)
+- [Troubleshooting](../troubleshooting/README.md)

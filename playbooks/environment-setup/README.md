@@ -30,17 +30,7 @@ Optional context that improves setup quality:
 2. Route to the model-family skill when stack-specific caveats are required.
 3. For no-NVIDIA scenarios and Evo2 requests, prefer hosted guidance from `evo2-inference`.
 
-## Output Expectations (Runtime Defaults)
-
-`environment-setup` currently has no dedicated entry in `registry/output_contracts.yaml`.
-The runtime still returns a normalized `plan` object. A high-quality response should include:
-
-- explicit assumptions about OS/runtime and hardware
-- runnable setup or validation steps
-- expected setup verification outputs
-- fallback path when local setup constraints block progress
-
-## Minimal Reproducible Commands
+## Runbook (Minimal Reproducible Commands)
 
 Text output:
 
@@ -60,14 +50,86 @@ bash scripts/run_agent.sh \
   --format json
 ```
 
-## Clarify Flow (When Inputs Are Missing)
+Optional bootstrap baseline:
+
+```bash
+./scripts/bootstrap.sh
+./scripts/link_skills.sh
+```
+
+## Learn (Step-by-step + checkpoints + common failures)
+
+Step 1: validate repository wiring.
+
+```bash
+make validate-agent
+```
+
+Expected checkpoint:
+
+- validation commands finish with exit code `0`
+- routing eval summary reports all cases passed
+
+Step 2: request an environment setup plan.
+
+```bash
+bash scripts/run_agent.sh \
+  --task environment-setup \
+  --query 'Need environment setup for evo2-inference on macOS without NVIDIA GPU' \
+  --format text
+```
+
+Expected checkpoint:
+
+- `decision: route` or focused `clarify`
+- `required_inputs` includes stack/runtime/hardware context
+
+Step 3: verify clarify-to-route recovery.
+
+```bash
+bash scripts/run_agent.sh --query 'Hello, can you help?' --format text
+bash scripts/run_agent.sh \
+  --task environment-setup \
+  --query 'Need environment setup for ntv3-hf on Linux with one 24GB GPU' \
+  --format text
+```
+
+Expected checkpoint:
+
+- first call returns `decision: clarify`
+- second call returns `decision: route` with reduced or empty `missing_inputs`
+
+Step 4: env precheck behavior for run mode.
+
+```bash
+# expected to fail early if ALPHAGENOME_API_KEY is not available
+env -u ALPHAGENOME_API_KEY bash scripts/execute_plan.sh \
+  --run \
+  --task variant-effect \
+  --query 'Use $alphagenome-api predict_variant on hg38 chrom=chr12 position=1_000_000 alt=G' \
+  --format text
+```
+
+Expected checkpoint:
+
+- includes `env_precheck:` block
+- reports missing required env var names (never values)
+- exits before running the first real step
+
+Common failure signatures and quick fixes:
+
+- `error: query is required` -> add `--query "..."` or provide stdin.
+- `decision: clarify` repeats -> include explicit task, runtime context, and hardware context.
+- `error: env precheck failed for skill ...` on `execute_plan.sh --run` -> set required env vars in process env or repo `.env`.
+
+## Clarify & Retry
 
 1. Inspect `missing_inputs` for stack, runtime, and hardware context.
 2. Clarify missing setup constraints in one focused question.
 3. Re-run to obtain a complete setup plan.
 4. Use smoke/validation commands before task-level execution.
 
-## Matching Tutorial
+## Related Playbooks
 
-- [Quickstart Agent Tutorial](../../tutorials/01-quickstart-agent.md)
-- [Troubleshooting and Clarify Tutorial](../../tutorials/06-troubleshooting-and-clarify.md)
+- [Getting Started](../getting-started/README.md)
+- [Troubleshooting](../troubleshooting/README.md)

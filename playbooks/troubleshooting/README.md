@@ -1,21 +1,29 @@
-# Tutorial 06: Troubleshooting and Clarify Flow
+# Troubleshooting Playbook
 
-## Goal
+## Purpose
 
 Handle low-confidence routing and missing-input scenarios efficiently.
 
-## Step 1: Trigger a clarify response intentionally
+## Use This When
+
+- `run_agent.sh` returns `decision: clarify` repeatedly.
+- `missing_inputs` prevents runnable plans.
+- `execute_plan.sh --run` exits early on env precheck.
+
+## Runbook (Minimal Reproducible Commands)
+
+Step 1: trigger a clarify response intentionally.
 
 ```bash
 bash scripts/run_agent.sh --query 'Hello, can you help?' --format text
 ```
 
-Expected output checkpoint:
+Expected checkpoint:
 
 - `decision: clarify`
 - `clarify_question` is present
 
-## Step 2: Respond with task and required context
+Step 2: respond with task and required context.
 
 ```bash
 bash scripts/run_agent.sh \
@@ -24,12 +32,12 @@ bash scripts/run_agent.sh \
   --format text
 ```
 
-Expected output checkpoint:
+Expected checkpoint:
 
 - `decision: route`
 - `missing_inputs: none` (or reduced list)
 
-## Step 3: Validate with dry-run execution
+Step 3: validate with dry-run execution.
 
 ```bash
 bash scripts/execute_plan.sh \
@@ -38,11 +46,11 @@ bash scripts/execute_plan.sh \
   --format text
 ```
 
-Expected output checkpoint:
+Expected checkpoint:
 
 - dry-run summary shows no step failure
 
-## Common Failure Signatures and Immediate Fix
+## Common Failure Signatures and Immediate Fixes
 
 - `decision: clarify` repeats -> provide missing required keys directly in query.
 - `error: routing failed: ...` -> check registry files exist and run `make validate-agent`.
@@ -61,7 +69,7 @@ env -u ALPHAGENOME_API_KEY bash scripts/execute_plan.sh \
   --format text
 ```
 
-Expected output checkpoint:
+Expected checkpoint:
 
 - includes `env_precheck:` block
 - reports missing required env var names (never values)
@@ -69,8 +77,9 @@ Expected output checkpoint:
 
 ## Related Playbooks
 
-- [Variant-Effect Playbook](../playbooks/variant-effect/README.md)
-- [Environment-Setup Playbook](../playbooks/environment-setup/README.md)
-- [Embedding Playbook](../playbooks/embedding/README.md)
-- [Track-Prediction Playbook](../playbooks/track-prediction/README.md)
-- [Fine-Tuning Playbook](../playbooks/fine-tuning/README.md)
+- [Getting Started](../getting-started/README.md)
+- [Variant-Effect](../variant-effect/README.md)
+- [Environment-Setup](../environment-setup/README.md)
+- [Embedding](../embedding/README.md)
+- [Track-Prediction](../track-prediction/README.md)
+- [Fine-Tuning](../fine-tuning/README.md)

@@ -1,15 +1,16 @@
-# s2f Agent Tutorials
+# s2f Playbooks
 
-This folder provides a step-by-step learning path for using the `s2f` agent.
+This directory is the single entry point for both learning and execution guidance.
 
 ## Learning Path
 
-1. [01-quickstart-agent.md](./01-quickstart-agent.md)
-2. [02-variant-effect.md](./02-variant-effect.md)
-3. [03-embedding.md](./03-embedding.md)
-4. [04-track-prediction.md](./04-track-prediction.md)
-5. [05-fine-tuning.md](./05-fine-tuning.md)
-6. [06-troubleshooting-and-clarify.md](./06-troubleshooting-and-clarify.md)
+1. [Getting Started](./getting-started/README.md)
+2. [Variant-Effect](./variant-effect/README.md)
+3. [Embedding](./embedding/README.md)
+4. [Track-Prediction](./track-prediction/README.md)
+5. [Fine-Tuning](./fine-tuning/README.md)
+6. [Environment-Setup](./environment-setup/README.md)
+7. [Troubleshooting](./troubleshooting/README.md)
 
 ## Prerequisites
 
@@ -30,7 +31,7 @@ Current first-rollout contracts:
 
 ## Expected Outcomes
 
-After completing this tutorial set, you should be able to:
+After completing this playbook set, you should be able to:
 
 - choose the right command (`route_query.sh`, `run_agent.sh`, `execute_plan.sh`)
 - read and act on `decision`, `missing_inputs`, and `plan`
@@ -45,10 +46,10 @@ Use single quotes for queries that contain `$skill` names so your shell does not
 bash scripts/run_agent.sh --query 'Use $alphagenome-api for variant-effect'
 ```
 
-## Contract References
+## Task Playbooks
 
-- [Variant-Effect Playbook](../playbooks/variant-effect/README.md)
-- [Embedding Playbook](../playbooks/embedding/README.md)
-- [Track-Prediction Playbook](../playbooks/track-prediction/README.md)
-- [Fine-Tuning Playbook](../playbooks/fine-tuning/README.md)
-- [Environment-Setup Playbook](../playbooks/environment-setup/README.md)
+- [Variant-Effect Playbook](./variant-effect/README.md)
+- [Embedding Playbook](./embedding/README.md)
+- [Track-Prediction Playbook](./track-prediction/README.md)
+- [Fine-Tuning Playbook](./fine-tuning/README.md)
+- [Environment-Setup Playbook](./environment-setup/README.md)

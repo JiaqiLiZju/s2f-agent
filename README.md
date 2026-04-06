@@ -112,7 +112,7 @@ s2f-agent/
 ├── registry/               # skills index, tags, routing/task/output/recovery contracts
 ├── skills/                 # canonical stable skill packages
 ├── skills-dev/             # in-progress skill packages
-├── playbooks/              # task-level cross-skill guidance
+├── playbooks/              # task-level runbooks plus step-by-step learning guides
 ├── evals/                  # routing + groundedness + task-success evaluation cases
 ├── docs/                   # architecture and design notes
 ├── scripts/                # setup, routing, orchestration, validation tooling
@@ -193,15 +193,16 @@ Contract-first references:
 - [`playbooks/environment-setup/README.md`](./playbooks/environment-setup/README.md)
 - [`registry/input_schema.yaml`](./registry/input_schema.yaml)
 
-Step-by-step tutorials:
+Learning in playbooks:
 
-- [`tutorials/README.md`](./tutorials/README.md)
-- [`tutorials/01-quickstart-agent.md`](./tutorials/01-quickstart-agent.md)
-- [`tutorials/02-variant-effect.md`](./tutorials/02-variant-effect.md)
-- [`tutorials/03-embedding.md`](./tutorials/03-embedding.md)
-- [`tutorials/04-track-prediction.md`](./tutorials/04-track-prediction.md)
-- [`tutorials/05-fine-tuning.md`](./tutorials/05-fine-tuning.md)
-- [`tutorials/06-troubleshooting-and-clarify.md`](./tutorials/06-troubleshooting-and-clarify.md)
+- [`playbooks/README.md`](./playbooks/README.md)
+- [`playbooks/getting-started/README.md`](./playbooks/getting-started/README.md)
+- [`playbooks/variant-effect/README.md`](./playbooks/variant-effect/README.md)
+- [`playbooks/embedding/README.md`](./playbooks/embedding/README.md)
+- [`playbooks/track-prediction/README.md`](./playbooks/track-prediction/README.md)
+- [`playbooks/fine-tuning/README.md`](./playbooks/fine-tuning/README.md)
+- [`playbooks/environment-setup/README.md`](./playbooks/environment-setup/README.md)
+- [`playbooks/troubleshooting/README.md`](./playbooks/troubleshooting/README.md)
 
 Open the local interactive console:
 

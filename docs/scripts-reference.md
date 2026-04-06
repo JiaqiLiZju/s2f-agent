@@ -1,6 +1,6 @@
 # Scripts Reference
 
-All 19 scripts in `scripts/`. For step-by-step usage in task context see `tutorials/`.
+All 19 scripts in `scripts/`. For step-by-step usage in task context see `playbooks/`.
 
 ## Script Groups
 
@@ -109,4 +109,4 @@ All scripts that iterate over skills source `scripts/lib_registry.sh`.
 ## See Also
 
 - [Evals Reference](./evals.md) — how to run and interpret validation/eval output
-- `tutorials/01-quickstart-agent.md` — end-to-end walkthrough using these scripts
+- `playbooks/getting-started/README.md` — end-to-end walkthrough using these scripts

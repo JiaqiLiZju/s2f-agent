@@ -1,21 +1,29 @@
-# Tutorial 01: Quickstart Agent
+# Getting-Started Playbook
 
-## Goal
+## Purpose
 
 Run one complete agent loop: route -> plan -> dry-run validation.
 
-## Step 1: Validate the repository wiring
+## Use This When
+
+- You are new to the repository and need a first successful run.
+- You want to verify routing, plan generation, and dry-run execution end to end.
+- You need a baseline before task-specific playbooks.
+
+## Runbook (Minimal Reproducible Commands)
+
+Step 1: validate the repository wiring.
 
 ```bash
 make validate-agent
 ```
 
-Expected output checkpoint:
+Expected checkpoint:
 
 - validation commands finish with exit code `0`
 - routing eval summary reports all cases passed
 
-## Step 2: Route a request
+Step 2: route a request.
 
 ```bash
 bash scripts/route_query.sh \
@@ -23,12 +31,12 @@ bash scripts/route_query.sh \
   --format text
 ```
 
-Expected output checkpoint:
+Expected checkpoint:
 
 - includes `decision: route` or `decision: clarify`
 - includes a confidence value and candidate skill(s)
 
-## Step 3: Build a full structured plan
+Step 3: build a structured plan.
 
 ```bash
 bash scripts/run_agent.sh \
@@ -37,13 +45,13 @@ bash scripts/run_agent.sh \
   --format json
 ```
 
-Expected output checkpoint:
+Expected checkpoint:
 
 - `decision` is `route`
 - `primary_skill` is present
 - `plan` is non-null
 
-## Step 4: Validate execution path in dry-run mode
+Step 4: validate execution path in dry-run mode.
 
 ```bash
 bash scripts/execute_plan.sh \
@@ -52,7 +60,7 @@ bash scripts/execute_plan.sh \
   --format text
 ```
 
-Expected output checkpoint:
+Expected checkpoint:
 
 - summary contains `dry_run=1`
 - summary contains `failed=0` and `verify_failed=0`
@@ -64,6 +72,8 @@ Expected output checkpoint:
 - `$alphagenome-api` becomes malformed in query -> wrap query in single quotes.
 - `error: env precheck failed for skill ...` on `execute_plan.sh --run` -> provide required env vars in process env or repo `.env` before rerunning.
 
-## Related Playbook
+## Related Playbooks
 
-- [Environment-Setup Playbook](../playbooks/environment-setup/README.md)
+- [Variant-Effect](../variant-effect/README.md)
+- [Environment-Setup](../environment-setup/README.md)
+- [Troubleshooting](../troubleshooting/README.md)
