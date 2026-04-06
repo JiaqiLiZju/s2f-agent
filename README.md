@@ -58,25 +58,25 @@ First run after bootstrap:
 
 | Capability | What it enables | Entry points |
 | --- | --- | --- |
-| Skill-grounded execution | Domain-specific guidance for genomics model families and workflows | `skills/*/SKILL.md`, `skills-dev/*/SKILL.md` |
-| Deterministic routing | Ranked skill selection with `route` / `clarify` decision and confidence | `scripts/route_query.sh`, `registry/routing.yaml` |
-| Canonical input schema | Shared canonical input keys, aliases, and coordinate conventions | `registry/input_schema.yaml`, `scripts/validate_input_contracts.sh` |
-| Task-contract checks | Detects missing required inputs before execution guidance | `scripts/run_agent.sh`, `registry/task_contracts.yaml` |
-| Plan standardization | Emits normalized task plans with runnable steps and expected outputs | `scripts/run_agent.sh`, `registry/output_contracts.yaml`, `registry/recovery_policies.yaml` |
-| Plan execution | Dry-run or execute generated steps and verify expected outputs | `scripts/execute_plan.sh` |
-| Cross-skill playbook mapping | Maps user intent to reusable task playbooks | `playbooks/*/README.md` |
-| Reproducible environment setup | Standardized stack provisioning and one-step bootstrap | `scripts/provision_stack.sh`, `scripts/bootstrap.sh`, `Makefile` |
-| Validation and regression checks | Registry, metadata, migration, and routing consistency checks | `scripts/validate_*.sh`, `make validate-agent` |
+| Skill-grounded execution | Domain-specific guidance for genomics model families and workflows | `skills/*/SKILL.md`, `skills-dev/*/SKILL.md`, [`docs/skills-reference.md`](./docs/skills-reference.md) |
+| Deterministic routing | Ranked skill selection with `route` / `clarify` decision and confidence | `scripts/route_query.sh`, `registry/routing.yaml`, [`docs/routing.md`](./docs/routing.md) |
+| Canonical input schema | Shared canonical input keys, aliases, and coordinate conventions | `registry/input_schema.yaml`, `scripts/validate_input_contracts.sh`, [`docs/input-schema.md`](./docs/input-schema.md) |
+| Task-contract checks | Detects missing required inputs before execution guidance | `scripts/run_agent.sh`, `registry/task_contracts.yaml`, [`docs/contracts.md`](./docs/contracts.md) |
+| Plan standardization | Emits normalized task plans with runnable steps and expected outputs | `scripts/run_agent.sh`, `registry/output_contracts.yaml`, `registry/recovery_policies.yaml`, [`docs/contracts.md`](./docs/contracts.md) |
+| Plan execution | Dry-run or execute generated steps and verify expected outputs | `scripts/execute_plan.sh`, [`docs/scripts-reference.md`](./docs/scripts-reference.md) |
+| Cross-skill playbook mapping | Maps user intent to reusable task playbooks | `playbooks/*/README.md`, [`docs/architecture.md`](./docs/architecture.md) |
+| Reproducible environment setup | Standardized stack provisioning and one-step bootstrap | `scripts/provision_stack.sh`, `scripts/bootstrap.sh`, `Makefile`, [`docs/scripts-reference.md`](./docs/scripts-reference.md) |
+| Validation and regression checks | Registry, metadata, migration, and routing consistency checks | `scripts/validate_*.sh`, `make validate-agent`, [`docs/evals.md`](./docs/evals.md) |
 
 ## Application Scenarios
 
-| Scenario | Typical objective | Primary skills | Playbook |
-| --- | --- | --- | --- |
-| Variant-effect analysis | Compare REF vs ALT impact or prioritize variants | `alphagenome-api`, `borzoi-workflows`, `gpn-models`, `evo2-inference` | [`variant-effect`](./playbooks/variant-effect/README.md) |
-| Embedding and representation | Produce sequence embeddings for downstream analyses | `dnabert2`, `nucleotide-transformer-v3`, `nucleotide-transformer`, `evo2-inference` | [`embedding`](./playbooks/embedding/README.md) |
-| Track prediction workflows | Run sequence-to-signal prediction with model-appropriate constraints | `nucleotide-transformer-v3`, `borzoi-workflows`, `segment-nt` | [`track-prediction`](./playbooks/track-prediction/README.md) |
-| Fine-tuning and training setup | Prepare schemas, training configs, and model-specific run paths | `dnabert2`, `bpnet`, `basset-workflows` | [`fine-tuning`](./playbooks/fine-tuning/README.md) |
-| Environment bring-up and migration | Build reproducible stacks and verify operational readiness | `skill-factory` plus stack-specific skills | [`environment-setup`](./playbooks/environment-setup/README.md) |
+| Scenario | Typical objective | Primary skills | Playbook | Docs |
+| --- | --- | --- | --- | --- |
+| Variant-effect analysis | Compare REF vs ALT impact or prioritize variants | `alphagenome-api`, `borzoi-workflows`, `gpn-models`, `evo2-inference` | [`variant-effect`](./playbooks/variant-effect/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
+| Embedding and representation | Produce sequence embeddings for downstream analyses | `dnabert2`, `nucleotide-transformer-v3`, `nucleotide-transformer`, `evo2-inference` | [`embedding`](./playbooks/embedding/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
+| Track prediction workflows | Run sequence-to-signal prediction with model-appropriate constraints | `nucleotide-transformer-v3`, `borzoi-workflows`, `segment-nt` | [`track-prediction`](./playbooks/track-prediction/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
+| Fine-tuning and training setup | Prepare schemas, training configs, and model-specific run paths | `dnabert2`, `bpnet`, `basset-workflows` | [`fine-tuning`](./playbooks/fine-tuning/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
+| Environment bring-up and migration | Build reproducible stacks and verify operational readiness | `skill-factory` plus stack-specific skills | [`environment-setup`](./playbooks/environment-setup/README.md) | [`scripts-reference`](./docs/scripts-reference.md), [`architecture`](./docs/architecture.md) |
 
 ## Skill Catalog
 
