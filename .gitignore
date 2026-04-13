@@ -10,3 +10,7 @@ DEVELOPMENT_PLAN.md
 DEVELOPMENT_PROGRESS.md
 .env
 case-study
+manuscript
+DEV/
+benchmark/runs/
+benchmark/reports/
