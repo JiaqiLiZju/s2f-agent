@@ -122,3 +122,33 @@ When users ask to "convert to script" or "give training command":
 3. Keep data, model, loss, metrics, optimizer, scheduler, and checkpoint IO as separate blocks.
 4. Emit explicit placeholders for user dataset paths and project-specific save directories.
 5. Label non-executed placeholders clearly instead of fabricating results.
+
+## Case-Study Prep Artifacts (case-study/ntv3)
+
+When running `bash case-study/ntv3/run_ntv3_finetuning_prep.sh`, interpret outputs as planning artifacts:
+
+- `fine_tuning_plan.json`: routed plan from `run_agent.sh` with `decision`, `primary_skill`, and planned runnable steps.
+- `train-command.sh`: notebook-to-script template entrypoint; this is a handoff scaffold, not proof of executed training.
+- `eval-metrics.json`: expected to contain `status=not_executed` for prep-only flow plus `selected_skill` and `planned_train_command`.
+- `prep_report.json`: links prep artifacts and records context-length planning details.
+- `validate_dataset.log` and `length_check.log`: dataset/schema and divisibility checkpoints.
+
+Use these artifacts to decide whether the workflow is ready to move into notebook training.
+
+## Handoff: Prep -> Notebook Training
+
+1. Confirm prep passed: required artifact files exist and `fine_tuning_plan.json` has `decision=route`.
+2. Open the matching notebook family (`02_*`, `03_*`, or `04_*`) based on head type and pretrained/posttrained path.
+3. Copy resolved assumptions from prep into notebook config cells:
+   - model id, species, sequence/context length, divisor, dataset paths.
+4. Keep the prep-generated `train-command.sh` as an execution template and provenance note.
+5. Start training in notebook/runtime; replace prep placeholder metrics with real train/eval outputs.
+
+## Failure Recovery Paths (Prep Phase)
+
+1. Length invalid (`check_valid_length.py` fails):
+   - round context length to nearest valid multiple (`2 ** num_downsamples`) and rerun prep.
+2. Dataset schema invalid (`validate_dataset.log` fails):
+   - repair headers/columns/types to match intended workflow (`sequence,label` for the current case-study prep) and rerun prep.
+3. Token missing or gated model auth failure (`HF_TOKEN` unavailable/unauthorized):
+   - export valid `HF_TOKEN` (or run `huggingface-cli login`), then rerun prep from the start.

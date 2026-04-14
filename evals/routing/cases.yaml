@@ -1,5 +1,5 @@
 schema_version: 1
-updated_at: "2026-03-27"
+updated_at: "2026-04-15"
 cases:
   - id: route_001
     query: "Use $dnabert2 to validate my train/dev/test CSV and suggest model_max_length."
@@ -92,6 +92,17 @@ cases:
     task: variant-effect
   - id: route_019
     query: "Use $nucleotide-transformer-v3 for species-conditioned bigwig fine-tuning with compute constraints and dataset schema."
+    expected_primary_skill: nucleotide-transformer-v3
+    expected_secondary_skills:
+      - dnabert2
+    task: fine-tuning
+  - id: route_020
+    query: "Use $nucleotide-transformer-v3 to run embedding case-study for human hg38 chr19:6700000-6732768 and save outputs to case-study/ntv3/output."
+    expected_primary_skill: nucleotide-transformer-v3
+    expected_secondary_skills: []
+    task: embedding
+  - id: route_021
+    query: "Use $nucleotide-transformer-v3 for fine-tuning prep case-study with dataset schema sequence,label in case-study/ntv3/data and single 24GB GPU budget; output to case-study/ntv3/output with train-command.sh and eval-metrics.json."
     expected_primary_skill: nucleotide-transformer-v3
     expected_secondary_skills:
       - dnabert2

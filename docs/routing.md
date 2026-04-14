@@ -82,6 +82,7 @@ Fine-tuning disambiguation:
 
 - Prefer `dnabert2` for generic CSV/classification fine-tuning requests.
 - Prefer `nucleotide-transformer-v3` when the query explicitly mentions NTv3 and/or `bigwig` / `annotation` species-conditioned objectives.
+- For NTv3 case-study prep wording (for example `case-study/ntv3` + `train-command.sh` / `eval-metrics.json`), keep `nucleotide-transformer-v3` as primary and `dnabert2` as fallback secondary.
 
 ## The 5-Step Routing Algorithm
 

@@ -70,6 +70,18 @@ bash scripts/run_agent.sh \
   --format json
 ```
 
+NTv3 case-study prep route:
+
+```bash
+bash case-study/ntv3/run_ntv3_finetuning_prep.sh
+```
+
+NTv3 combined case-study route:
+
+```bash
+bash case-study/ntv3/run_ntv3_case_study.sh
+```
+
 ## Learn (Step-by-step + checkpoints + common failures)
 
 Step 1: build a fine-tuning plan.
@@ -119,6 +131,13 @@ Common failure signatures and quick fixes:
 - `missing_inputs` includes `compute-constraints` -> specify GPU/CPU and budget limits.
 - low-confidence `clarify` decision -> keep explicit task plus skill hint in the query.
 - wrong skill selected for NTv3 bigwig/annotation objectives -> make `bigwig` / `annotation` / `species-conditioned` explicit and include `$nucleotide-transformer-v3`.
+
+NTv3 case-study flow checkpoints:
+
+- prep artifacts exist: `fine_tuning_plan.json`, `train-command.sh`, `eval-metrics.json`, `prep_report.json`
+- `fine_tuning_plan.json` includes `decision=route` and `primary_skill=nucleotide-transformer-v3`
+- `eval-metrics.json` includes `status=not_executed` and `planned_train_command`
+- validate process and artifact types; do not treat one run's tensor shape numbers as contract checks
 
 ## Clarify & Retry
 

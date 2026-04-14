@@ -113,11 +113,56 @@ print(model.config.keep_target_center_fraction)
 ## Cold-start expectations
 
 - First run may download hundreds of MB of model weights and remote code.
-- CPU inference for 32,768 bp post-trained runs can take noticeably longer than GPU runs.
-- For 32,768 bp inputs, expected post-trained output lengths are:
-  - `logits`: full length (`32768`)
-  - `bigwig_tracks_logits`: middle 37.5% (`12288`)
-  - `bed_tracks_logits`: middle 37.5% (`12288`)
+- Long-context CPU inference can be noticeably slower than GPU inference.
+- Validate output structure from generated result JSON fields instead of hardcoding one run's tensor shape values.
+- For post-trained heads, derive center-crop behavior from `keep_target_center_fraction` and active config.
+
+## Case-Study (case-study/ntv3) Fast Triage Order
+
+Use this shortest command set when case-study execution fails:
+
+1. Token and environment check:
+
+```bash
+set -a; source .env; set +a; test -n "${HF_TOKEN:-}" && echo "HF_TOKEN=ok"
+```
+
+2. Runtime import check:
+
+```bash
+conda run -n ntv3 python -c "import transformers, torch; print(transformers.__version__)"
+```
+
+3. Length divisibility check:
+
+```bash
+python skills/nucleotide-transformer-v3/scripts/check_valid_length.py 670 --model InstaDeepAI/NTv3_100M_post
+```
+
+4. Case-study embedding flow:
+
+```bash
+bash case-study/ntv3/run_ntv3_embedding.sh
+```
+
+5. Case-study fine-tuning prep flow:
+
+```bash
+bash case-study/ntv3/run_ntv3_finetuning_prep.sh
+```
+
+6. Combined flow summary:
+
+```bash
+bash case-study/ntv3/run_ntv3_case_study.sh
+```
+
+Triage interpretation order:
+
+- If step 1 fails: fix `HF_TOKEN` / gated access first.
+- If step 2 fails: fix environment/dependency mismatch first.
+- If step 3 fails: fix/crop/pad lengths before rerunning workflow commands.
+- If step 4 or 5 fails: inspect corresponding log/JSON artifacts under `case-study/ntv3/output`.
 
 ## Backend selection guidance
 

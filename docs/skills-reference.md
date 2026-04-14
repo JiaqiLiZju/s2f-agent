@@ -41,6 +41,11 @@ Dev skills require `--include-disabled` to participate in routing, linking, and 
 | `jax-haiku-transformers` | Classic NT v1/v2 JAX/Haiku inference with 6-mer tokenization. Dev only. |
 | `skilling-and-scaffolding` | Tooling for scaffolding new skill packages from specs. Dev only. |
 
+## Fine-Tuning Routing Notes
+
+- Default fine-tuning route for generic CSV classification/regression requests remains `dnabert2`.
+- Route to `nucleotide-transformer-v3` when the request explicitly targets NTv3 and/or species-conditioned `bigwig` / `annotation` workflows (including `case-study/ntv3` prep phrasing).
+
 ## Including Disabled Skills
 
 All operational scripts (`link_skills.sh`, `route_query.sh`, `run_agent.sh`, `validate_*.sh`, `smoke_test.sh`) exclude disabled skills by default. To opt in:

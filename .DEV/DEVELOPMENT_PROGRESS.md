@@ -83,6 +83,66 @@
 - `case-study/` 目录当前受 `.gitignore` 管理，本轮重点提交为技能、路由、评测与 `.DEV` 记录文件。
 - 细粒度训练执行仍保持 notebook-first 路径，不引入新的 NTv3 一键训练 CLI。
 
+## 2026-04-15：NTv3 执行驱动更新（流程化沉淀版）
+
+### 目标
+
+基于 `case-study/ntv3` 实际执行结果，对 NTv3 skill、playbook、routing/docs 与 eval 进行全链路更新，强调“流程可复现 + 检查点可验证”，不将单次 run 的 shape/数值沉淀为硬约束。
+
+### 本轮变更
+
+#### 1. NTv3 skill 与参考文档
+
+- `skills/nucleotide-transformer-v3/SKILL.md`
+  - 强化 `Case-Study/NTv3 Execution Flow`：
+    - 执行顺序：embedding -> fine-tuning prep -> combined；
+    - 前置检查顺序：`HF_TOKEN` -> 运行环境 -> 长度整除 -> notebook-first 边界；
+    - 明确 prep-only 语义：`eval-metrics.json.status=not_executed` 为预期行为。
+- `skills/nucleotide-transformer-v3/references/finetune-workflows.md`
+  - 新增 prep 产物解释（`fine_tuning_plan.json` / `train-command.sh` / `eval-metrics.json` / `prep_report.json`）；
+  - 补充 prep -> notebook training 的衔接步骤；
+  - 补充失败恢复路径（长度不合法、schema 不合法、token 缺失）。
+- `skills/nucleotide-transformer-v3/references/setup-and-troubleshooting.md`
+  - 新增 `case-study/ntv3` 最短排查命令集与故障定位顺序；
+  - 将固定 shape 文案改为流程型检查建议（避免数值硬编码）。
+- `skills/nucleotide-transformer-v3/skill.yaml`
+  - 仅微调触发词（新增 `species-conditioned`），未改 task contract 结构。
+
+#### 2. Playbooks / Docs 联动
+
+- `playbooks/fine-tuning/README.md`
+  - 增加 NTv3 case-study prep / combined 入口；
+  - 增加流程级检查点（关键产物与 `status/selected_skill/planned_train_command` 语义）。
+- `playbooks/embedding/README.md`
+  - 增加 NTv3 case-study embedding / combined 入口；
+  - 增加流程级检查点（产物存在 + 元信息字段 + summary 关联）。
+- `docs/routing.md`、`docs/skills-reference.md`
+  - 对齐 fine-tuning 判定：通用 CSV 默认 `dnabert2`，显式 NTv3 + `bigwig/annotation/species-conditioned` 优先 `nucleotide-transformer-v3`。
+- `docs/evals.md`
+  - 增加 NTv3 task-success 的流程导向说明与手工复核步骤；
+  - 明确不以固定 shape 数值作为断言。
+
+#### 3. Eval / Case 对齐
+
+- `evals/routing/cases.yaml`
+  - 新增 `route_020`（NTv3 case-study embedding）；
+  - 新增 `route_021`（NTv3 case-study fine-tuning prep）。
+- `evals/groundedness/cases.yaml`
+  - 新增 `grounded_006`（embedding case-study）；
+  - 新增 `grounded_007`（fine-tuning prep case-study）。
+- `evals/task_success/cases.yaml`
+  - `task_success_015` 断言由 `train-command.sh` 调整为 `eval-metrics.json`（贴合 prep 流程状态产物）。
+- `case-study/run_cases.sh`
+  - A2 query 文案统一为显式 `$nucleotide-transformer-v3` 语义，避免与 eval 命名/意图偏差。
+
+### 验证结果（本轮）
+
+- `bash scripts/validate_skill_metadata.sh` -> 通过（8/8）
+- `bash scripts/validate_input_contracts.sh` -> 通过（8/8 stable）
+- `bash scripts/validate_routing.sh` -> 通过（21/21）
+- `bash scripts/validate_groundedness.sh` -> 通过（7/7）
+- `bash scripts/validate_task_success.sh` -> 通过（15/15）
+
 ## 2026-04-14：Benchmark 独立 section 与全量执行记录
 
 ### 背景

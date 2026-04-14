@@ -1,5 +1,5 @@
 schema_version: 1
-updated_at: "2026-03-31"
+updated_at: "2026-04-15"
 cases:
   - id: task_success_001
     query: "Need variant-effect guidance for hg38 chr12 REF ALT with output summary."
@@ -84,3 +84,17 @@ cases:
     min_expected_outputs: 2
     required_step_contains: "nucleotide-transformer-v3-fine-tuning-workflow"
     required_expected_output_contains: "train-command.sh"
+  - id: task_success_014
+    query: "Use $nucleotide-transformer-v3 to run embedding case-study for human hg38 chr19:6700000-6732768 and save outputs to case-study/ntv3/output."
+    task: embedding
+    min_runnable_steps: 1
+    min_expected_outputs: 2
+    required_step_contains: "nucleotide-transformer-v3-embedding-workflow"
+    required_expected_output_contains: "embedding-metadata.json"
+  - id: task_success_015
+    query: "Use $nucleotide-transformer-v3 for fine-tuning prep case-study with dataset schema sequence,label in case-study/ntv3/data and single 24GB GPU budget; output to case-study/ntv3/output with train-command.sh and eval-metrics.json."
+    task: fine-tuning
+    min_runnable_steps: 1
+    min_expected_outputs: 2
+    required_step_contains: "nucleotide-transformer-v3-fine-tuning-workflow"
+    required_expected_output_contains: "eval-metrics.json"

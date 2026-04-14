@@ -13,6 +13,7 @@ tasks:
 triggers:
   - ntv3
   - species-conditioning
+  - species-conditioned
   - post-trained
   - bigwig
   - annotation

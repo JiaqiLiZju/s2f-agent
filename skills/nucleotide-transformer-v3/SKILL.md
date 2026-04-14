@@ -158,6 +158,35 @@ Expected outputs to surface in responses:
 - training/eval metric artifact paths
 - best-checkpoint path or explicit "not executed" status if only planning is requested
 
+## Case-Study/NTv3 Execution Flow
+
+Use this section when the user asks for reproducible NTv3 execution under `case-study/ntv3`.
+
+Recommended order:
+
+1. Run embedding workflow:
+   - `bash case-study/ntv3/run_ntv3_embedding.sh`
+2. Run fine-tuning prep workflow:
+   - `bash case-study/ntv3/run_ntv3_finetuning_prep.sh`
+3. Run combined workflow:
+   - `bash case-study/ntv3/run_ntv3_case_study.sh`
+   - This orchestrates embedding + prep together and writes `case_study_summary.json`.
+
+Preflight checklist:
+
+1. `HF_TOKEN` is set and gated NTv3 model access is available.
+2. Runtime is available (`conda run -n ntv3` preferred, otherwise local python).
+3. Input lengths are validated with `scripts/check_valid_length.py`.
+4. Fine-tuning boundary is explicit: prep outputs are expected, full training is not executed in this flow.
+
+Flow-level acceptance checkpoints (process-oriented):
+
+- embedding output files exist in `case-study/ntv3/output` (`*_trackplot.png`, `*_result.json`)
+- fine-tuning prep output files exist in `case-study/ntv3/output` (`fine_tuning_plan.json`, `train-command.sh`, `eval-metrics.json`, `prep_report.json`)
+- `eval-metrics.json` contains `status=not_executed` for prep-only flows
+- `eval-metrics.json` contains `selected_skill` and `planned_train_command`
+- Do not treat one specific run's tensor shape values as hard assertions in this workflow section.
+
 ## Grounded API Surface
 
 Treat the following HF tutorial names and patterns as grounded:

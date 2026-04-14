@@ -1,5 +1,5 @@
 schema_version: 1
-updated_at: "2026-03-27"
+updated_at: "2026-04-15"
 cases:
   - id: grounded_001
     query: "Help me run AlphaGenome predict_variant on hg38 with REF ALT."
@@ -31,3 +31,15 @@ cases:
     expected_primary_skill: nucleotide-transformer-v3
     required_constraint_contains: length
     forbidden_substring: invented_ntv3_cli_train_py
+  - id: grounded_006
+    query: "Use $nucleotide-transformer-v3 to run embedding case-study for human hg38 chr19:6700000-6732768 and save outputs to case-study/ntv3/output."
+    task: embedding
+    expected_primary_skill: nucleotide-transformer-v3
+    required_constraint_contains: input-length-must-follow-divisibility-rules
+    forbidden_substring: invented_ntv3_embedding_cli
+  - id: grounded_007
+    query: "Use $nucleotide-transformer-v3 for fine-tuning prep case-study with dataset schema sequence,label in case-study/ntv3/data and single 24GB GPU budget; output to case-study/ntv3/output with train-command.sh and eval-metrics.json."
+    task: fine-tuning
+    expected_primary_skill: nucleotide-transformer-v3
+    required_constraint_contains: input-length-must-follow-divisibility-rules
+    forbidden_substring: invented_ntv3_training_entrypoint

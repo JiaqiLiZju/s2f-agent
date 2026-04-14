@@ -59,6 +59,18 @@ bash scripts/execute_plan.sh \
   --format text
 ```
 
+NTv3 case-study embedding route:
+
+```bash
+bash case-study/ntv3/run_ntv3_embedding.sh
+```
+
+NTv3 combined case-study route:
+
+```bash
+bash case-study/ntv3/run_ntv3_case_study.sh
+```
+
 ## Learn (Step-by-step + checkpoints + common failures)
 
 Step 1: build an embedding plan.
@@ -108,6 +120,13 @@ Common failure signatures and quick fixes:
 - `missing_inputs` includes `embedding-target` -> specify token-level or pooled target explicitly.
 - `missing_inputs` includes `sequence-or-interval` -> provide sequence text or interval coordinates.
 - command interpreted `$dnabert2` by shell -> use single quotes around query.
+
+NTv3 case-study flow checkpoints:
+
+- embedding artifacts exist in `case-study/ntv3/output`: `*_trackplot.png` and `*_result.json`
+- result JSON includes workflow metadata (`model_name`, interval fields, output paths)
+- combined flow summary (`case_study_summary.json`) links embedding outputs and fine-tuning prep placeholders
+- validate workflow status and artifact presence, not fixed shape numbers
 
 ## Clarify & Retry
 

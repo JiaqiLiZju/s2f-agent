@@ -185,6 +185,11 @@ make eval-groundedness
 **Case file:** `evals/task_success/cases.yaml`
 
 Each case runs the agent and asserts the normalized plan meets minimum quality thresholds.
+For NTv3 case-study flows, keep assertions process-oriented:
+
+- assert command fragments and artifact types (for example `*-workflow`, `train-command.sh`, `eval-metrics.json`)
+- assert workflow-state indicators when available (for example prep-only `not_executed` in manual JSON review)
+- do not assert fixed tensor shape values from one execution run
 
 ```yaml
 - id: task_success_001
@@ -216,6 +221,14 @@ Each case runs the agent and asserts the normalized plan meets minimum quality t
   min_expected_outputs: 2
   required_step_contains: "nucleotide-transformer-v3-fine-tuning-workflow"
   required_expected_output_contains: "train-command.sh"
+
+- id: task_success_015
+  query: "...nucleotide-transformer-v3 fine-tuning prep case-study in case-study/ntv3..."
+  task: fine-tuning
+  min_runnable_steps: 1
+  min_expected_outputs: 2
+  required_step_contains: "nucleotide-transformer-v3-fine-tuning-workflow"
+  required_expected_output_contains: "eval-metrics.json"
 ```
 
 Fields:
@@ -234,6 +247,16 @@ bash scripts/validate_task_success.sh
 # or
 make eval-task-success
 ```
+
+Manual NTv3 flow review (recommended in addition to scripted evals):
+
+1. Run `bash case-study/ntv3/run_ntv3_embedding.sh` and `bash case-study/ntv3/run_ntv3_finetuning_prep.sh` (or combined `run_ntv3_case_study.sh`).
+2. Verify artifacts exist under `case-study/ntv3/output`.
+3. Inspect JSON fields for process state:
+   - `status`
+   - `selected_skill`
+   - `planned_train_command`
+4. Treat JSON field presence and state as pass criteria; do not gate on fixed shape values.
 
 ## Structural Validation Scripts
 
