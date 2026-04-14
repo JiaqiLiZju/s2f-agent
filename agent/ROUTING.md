@@ -85,6 +85,11 @@ Answer format:
 - `environment-setup` -> `alphagenome-api`, `gpn-models`, `nucleotide-transformer`, `nucleotide-transformer-v3`, `borzoi-workflows`, `evo2-inference`
 - `embedding` -> `dnabert2`, `nucleotide-transformer`, `nucleotide-transformer-v3`, `evo2-inference`
 - `variant-effect` -> `alphagenome-api`, `borzoi-workflows`, `gpn-models`, `evo2-inference`
-- `fine-tuning` -> `dnabert2`, `bpnet`, `basset-workflows`
+- `fine-tuning` -> `dnabert2`, `nucleotide-transformer-v3`, `bpnet`, `basset-workflows`
 - `track-prediction` -> `nucleotide-transformer-v3`, `segment-nt`, `borzoi-workflows`
 - `troubleshooting` -> pick the skill that owns the failing stack or model family
+
+Fine-tuning disambiguation rule:
+
+- Prefer `dnabert2` for generic CSV/classification fine-tuning requests.
+- Prefer `nucleotide-transformer-v3` when the request explicitly targets NTv3 and/or bigwig or annotation heads with species-conditioned setup.

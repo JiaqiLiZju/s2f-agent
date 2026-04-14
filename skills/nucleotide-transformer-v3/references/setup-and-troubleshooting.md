@@ -16,6 +16,12 @@ Optional notebook dependencies for track plotting and sequence download:
 pip install pyfaidx requests seaborn matplotlib
 ```
 
+Notebook dependencies for NTv3 fine-tuning workflows:
+
+```bash
+pip install pyfaidx pyBigWig torchmetrics
+```
+
 ## Authentication for gated repos (required)
 
 NTv3 repos are gated. Authenticate before loading models.
@@ -95,6 +101,15 @@ print(model.config.keep_target_center_fraction)
 - Reduce sequence length or batch size.
 - Prefer single-example runs first for post-trained `32,768+` contexts before scaling batch size.
 
+7. `No module named pyBigWig` / `No module named pyfaidx` / `No module named torchmetrics`
+- Install notebook fine-tuning extras: `pip install pyfaidx pyBigWig torchmetrics`.
+- Ensure installation is in the same environment used by notebook/script execution.
+
+8. Fine-tuning labels and head mismatch
+- Confirm whether the workflow is bigwig-track regression or annotation classification before training.
+- Keep loss family aligned with the head type (for example Poisson-style for bigwig, focal/classification style for annotation).
+- Verify center-crop handling is consistent between model outputs and training targets.
+
 ## Cold-start expectations
 
 - First run may download hundreds of MB of model weights and remote code.
@@ -108,3 +123,4 @@ print(model.config.keep_target_center_fraction)
 
 - Default: HF Transformers path for reliability and parity with official tutorials.
 - Use JAX helper APIs only when a project already depends on `nucleotide_transformer_v3.pretrained`.
+- For NTv3 fine-tuning in this repo, prefer the notebook-first workflow references in `Readme/NTv3/02/03/04`.

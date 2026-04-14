@@ -72,11 +72,16 @@ When no explicit skill is mentioned, the router selects from these defaults (ord
 | `environment-setup` | alphagenome-api, gpn-models, nucleotide-transformer, nucleotide-transformer-v3, borzoi-workflows, evo2-inference |
 | `embedding` | dnabert2, nucleotide-transformer, nucleotide-transformer-v3, evo2-inference |
 | `variant-effect` | alphagenome-api, borzoi-workflows, gpn-models, evo2-inference |
-| `fine-tuning` | dnabert2, bpnet, basset-workflows |
+| `fine-tuning` | dnabert2, nucleotide-transformer-v3, bpnet, basset-workflows |
 | `track-prediction` | nucleotide-transformer-v3, segment-nt, borzoi-workflows |
 | `troubleshooting` | skill that owns the failing stack or model family |
 
 Source: `agent/ROUTING.md`
+
+Fine-tuning disambiguation:
+
+- Prefer `dnabert2` for generic CSV/classification fine-tuning requests.
+- Prefer `nucleotide-transformer-v3` when the query explicitly mentions NTv3 and/or `bigwig` / `annotation` species-conditioned objectives.
 
 ## The 5-Step Routing Algorithm
 

@@ -208,6 +208,14 @@ Each case runs the agent and asserts the normalized plan meets minimum quality t
   min_expected_outputs: 4
   required_step_contains: "run_track_prediction_bed_batch.py"
   required_expected_output_contains: "ntv3_bed_batch_summary.json"
+
+- id: task_success_013
+  query: "...nucleotide-transformer-v3 fine-tuning with sequence,label CSV and single 24GB GPU budget..."
+  task: fine-tuning
+  min_runnable_steps: 1
+  min_expected_outputs: 2
+  required_step_contains: "nucleotide-transformer-v3-fine-tuning-workflow"
+  required_expected_output_contains: "train-command.sh"
 ```
 
 Fields:

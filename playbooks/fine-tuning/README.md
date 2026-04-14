@@ -23,12 +23,14 @@ Optional context that improves execution quality:
 - preferred model family
 - expected evaluation metrics
 - checkpoint initialization preference
+- target output head (`bigwig` or `annotation`) for NTv3-style workflows
 
 ## Skill Selection Heuristics
 
-1. Prefer `dnabert2` for CSV-oriented genomics fine-tuning workflows.
-2. Prefer `bpnet` for profile-prediction-focused training stacks.
-3. Prefer `basset-workflows` only when legacy Torch7 compatibility is required.
+1. Prefer `dnabert2` for CSV-oriented genomics fine-tuning workflows (classification/regression labels).
+2. Prefer `nucleotide-transformer-v3` when the request explicitly targets NTv3 or species-conditioned `bigwig` / `annotation` fine-tuning workflows.
+3. Prefer `bpnet` for profile-prediction-focused training stacks.
+4. Prefer `basset-workflows` only when legacy Torch7 compatibility is required.
 
 ## Runbook (Minimal Reproducible Commands)
 
@@ -57,6 +59,15 @@ bash scripts/execute_plan.sh \
   --task fine-tuning \
   --query 'Use $dnabert2 for binary classification fine-tuning with CSV labels and compute budget' \
   --format text
+```
+
+NTv3 notebook-first planning route:
+
+```bash
+bash scripts/run_agent.sh \
+  --task fine-tuning \
+  --query 'Use $nucleotide-transformer-v3 for species-conditioned bigwig fine-tuning with compute constraints' \
+  --format json
 ```
 
 ## Learn (Step-by-step + checkpoints + common failures)
@@ -107,6 +118,7 @@ Common failure signatures and quick fixes:
 - `missing_inputs` includes `dataset-schema` -> state required columns and split assumptions.
 - `missing_inputs` includes `compute-constraints` -> specify GPU/CPU and budget limits.
 - low-confidence `clarify` decision -> keep explicit task plus skill hint in the query.
+- wrong skill selected for NTv3 bigwig/annotation objectives -> make `bigwig` / `annotation` / `species-conditioned` explicit and include `$nucleotide-transformer-v3`.
 
 ## Clarify & Retry
 

@@ -90,3 +90,9 @@ cases:
     expected_secondary_skills:
       - gpn-models
     task: variant-effect
+  - id: route_019
+    query: "Use $nucleotide-transformer-v3 for species-conditioned bigwig fine-tuning with compute constraints and dataset schema."
+    expected_primary_skill: nucleotide-transformer-v3
+    expected_secondary_skills:
+      - dnabert2
+    task: fine-tuning

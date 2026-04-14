@@ -115,12 +115,15 @@ skills:
     tasks:
       - environment-setup
       - embedding
+      - fine-tuning
       - track-prediction
       - troubleshooting
     triggers:
       - ntv3
       - species-conditioning
       - post-trained
+      - bigwig
+      - annotation
   - id: segment-nt
     path: skills/segment-nt
     enabled: true

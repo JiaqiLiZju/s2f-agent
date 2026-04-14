@@ -7,12 +7,16 @@ family: transformers-ntv3
 tasks:
   - embedding
   - track-prediction
+  - fine-tuning
   - environment-setup
   - troubleshooting
 triggers:
   - ntv3
   - species-conditioning
   - post-trained
+  - bigwig
+  - annotation
+  - ntv3-finetuning
 required_inputs:
   - species
   - sequence-or-interval
@@ -20,12 +24,18 @@ optional_inputs:
   - assembly
   - output-head
   - output-dir
+  - task-objective
+  - dataset-schema
+  - compute-constraints
 input_mappings:
   - species|query_tokens=species,human,mouse|script_flags=--species
   - sequence-or-interval|query_tokens=sequence,interval,fasta,start,end,bed,.bed,file,path|script_flags=--interval,--chrom,--start,--end,--bed
   - assembly|query_tokens=assembly,hg38,hg19,mm10,chm13|script_flags=--assembly
   - output-head|query_tokens=head,track,bigwig,bed,trackplot,轨道|script_flags=posttrained-track-head-selection
   - output-dir|query_tokens=output,outdir,目录|script_flags=--output-dir
+  - task-objective|query_tokens=fine-tuning,finetune,training,objective,classification,regression,annotation,bigwig|script_flags=notebook-config:task-objective
+  - dataset-schema|query_tokens=csv,schema,tracks,labels,columns,bigwig,bed|script_flags=notebook-config:dataset-schema
+  - compute-constraints|query_tokens=gpu,cpu,memory,batch,accumulation,budget|script_flags=notebook-config:compute-constraints
 required_env:
   - HF_TOKEN
 constraints:
@@ -70,3 +80,4 @@ tool_contracts:
 priority_rules:
   - prefer-when-user-explicitly-mentions-ntv3
   - prefer-when-task-needs-species-conditioned-track-prediction
+  - prefer-for-fine-tuning-when-request-explicitly-targets-ntv3-bigwig-or-annotation-workflows

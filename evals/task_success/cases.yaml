@@ -70,3 +70,17 @@ cases:
     min_expected_outputs: 4
     required_step_contains: "run_track_prediction_bed_batch.py"
     required_expected_output_contains: "ntv3_bed_batch_summary.json"
+  - id: task_success_012
+    query: "Use $nucleotide-transformer-v3 to run embedding for hg38 chr19:6700000-6702768 and save outputs under case-study/embedding/output."
+    task: embedding
+    min_runnable_steps: 1
+    min_expected_outputs: 2
+    required_step_contains: "nucleotide-transformer-v3-embedding-workflow"
+    required_expected_output_contains: "embedding-metadata.json"
+  - id: task_success_013
+    query: "Use $nucleotide-transformer-v3 for binary classification fine-tuning with dataset schema sequence,label and single 24GB GPU budget; output train-command.sh and eval-metrics.json."
+    task: fine-tuning
+    min_runnable_steps: 1
+    min_expected_outputs: 2
+    required_step_contains: "nucleotide-transformer-v3-fine-tuning-workflow"
+    required_expected_output_contains: "train-command.sh"

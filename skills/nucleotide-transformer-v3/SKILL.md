@@ -1,6 +1,6 @@
 ---
 name: nucleotide-transformer-v3
-description: Use Nucleotide Transformer v3 for long-context multispecies inference with Hugging Face Transformers as the primary path, with JAX helper APIs as secondary compatibility, including pre-trained MLM outputs, post-trained species-conditioned track/annotation prediction, length-divisibility checks, and gated-repo troubleshooting. Use when Codex needs to write, fix, explain, or review code or notebooks involving `AutoTokenizer.from_pretrained(..., trust_remote_code=True)`, `AutoModelForMaskedLM`, `AutoModel`, `encode_species`, `num_downsamples`, `keep_target_center_fraction`, NTv3 model names, bigwig/bed outputs, or NTv3 install/auth issues.
+description: Use Nucleotide Transformer v3 for long-context multispecies workflows with Hugging Face Transformers as the primary path, with JAX helper APIs as secondary compatibility, including pre-trained MLM embeddings, post-trained species-conditioned track/annotation inference, notebook-first fine-tuning workflows, length-divisibility checks, and gated-repo troubleshooting. Use when Codex needs to write, fix, explain, or review code or notebooks involving `AutoTokenizer.from_pretrained(..., trust_remote_code=True)`, `AutoModelForMaskedLM`, `AutoModel`, `encode_species`, `num_downsamples`, `keep_target_center_fraction`, NTv3 model names, bigwig/bed outputs, NTv3 fine-tuning notebooks, or NTv3 install/auth issues.
 ---
 
 # Nucleotide Transformer v3
@@ -22,9 +22,10 @@ Use this skill for NTv3 only.
 - NTv3 model repos are gated.
 - Authenticate with `huggingface-cli login` or pass `token=...` in `from_pretrained(...)`.
 
-3. Choose the NTv3 stage.
+3. Choose the NTv3 workflow family.
 - Use pre-trained models for embeddings and masked-language-model style outputs.
 - Use post-trained models for species-conditioned functional-track and genome-annotation prediction.
+- Use notebook-first training workflows for NTv3 fine-tuning on bigwig/annotation tasks.
 
 4. Choose a model size or checkpoint family.
 - Use the main production checkpoints first.
@@ -49,9 +50,10 @@ Use this skill for NTv3 only.
 - If download transport is unstable, set `HF_HUB_DISABLE_XET=1`.
 - If JAX-source install errors on `jax>=0.6.0` with Python 3.9, switch to Python >=3.10 or use the HF tutorial path.
 
-8. Use the reusable track-prediction script for full workflows.
+8. Pick execution format by task.
 - For region-level track prediction + plotting, prefer [scripts/run_track_prediction.py](scripts/run_track_prediction.py) instead of rewriting notebook cells.
 - For BED batch workflows, use [scripts/run_track_prediction_bed_batch.py](scripts/run_track_prediction_bed_batch.py).
+- For fine-tuning requests, use notebook-first guidance from [references/finetune-workflows.md](references/finetune-workflows.md) and keep assumptions explicit (data schema, heads, length/divisor, hardware).
 
 ## Real Track Prediction Fastpath
 
@@ -128,6 +130,34 @@ Acceptance checklist:
 - `*_result.json` exists with expected `species/assembly/chrom/start/end`.
 - BED mode writes `ntv3_bed_batch_summary.json` with per-interval success/failure details.
 
+## Notebook-First Fine-Tuning Fastpath
+
+Use this path when the user asks for NTv3 fine-tuning or wants to reproduce NTv3 training tutorials.
+
+- Primary source notebooks: `Readme/NTv3/02_fine_tuning_pretrained_model_biwig.ipynb`, `03_fine_tuning_posttrained_model_biwig.ipynb`, `04_fine_tuning_pretrained_model_annotation.ipynb`.
+- Keep this scope explicit: this repo currently ships notebook workflows and planning guidance, not a unified one-command NTv3 training CLI script.
+
+Preflight order (do not skip):
+
+1. Confirm `HF_TOKEN` and gated model access.
+2. Confirm notebook dependencies (`pyfaidx`, `pyBigWig`, `torchmetrics`, `transformers`, `torch`) in the active runtime.
+3. Confirm data schema and head type (`bigwig` vs `annotation`) before writing training code.
+4. Confirm sequence length divisibility with `2 ** num_downsamples` and center-crop behavior.
+5. Confirm hardware constraints (GPU memory, mixed precision strategy, batch/accumulation plan).
+
+Execution guidance:
+
+- For pretrained bigwig fine-tuning, follow notebook `02_*` patterns (Poisson-style track loss + correlation metrics).
+- For posttrained bigwig fine-tuning, follow notebook `03_*` patterns with species conditioning.
+- For pretrained annotation fine-tuning, follow notebook `04_*` patterns (classification/focal-loss style setup).
+- When users ask for "train command", provide a reproducible notebook-to-script template and label any placeholders clearly.
+
+Expected outputs to surface in responses:
+
+- resolved training config summary (model, species, sequence length, divisor, head type)
+- training/eval metric artifact paths
+- best-checkpoint path or explicit "not executed" status if only planning is requested
+
 ## Grounded API Surface
 
 Treat the following HF tutorial names and patterns as grounded:
@@ -144,6 +174,11 @@ Treat the following HF tutorial names and patterns as grounded:
 - `outs["logits"]`
 - `outs["bigwig_tracks_logits"]`
 - `outs["bed_tracks_logits"]`
+- `torch.utils.data.DataLoader`
+- `torch.optim.AdamW`
+- `crop_center(...)`
+- `poisson_loss(...)`
+- `focal_loss(...)`
 
 Legacy JAX helper names remain grounded for compatibility:
 
@@ -195,6 +230,7 @@ Do not invent alternate wrappers or training code from this skill alone.
 - Read [references/setup-and-troubleshooting.md](references/setup-and-troubleshooting.md) first for install, version, and import failures.
 - Read [references/model-catalog.md](references/model-catalog.md) for checkpoint selection.
 - Read [references/pre-vs-post.md](references/pre-vs-post.md) for code patterns and output differences.
+- Read [references/finetune-workflows.md](references/finetune-workflows.md) for notebook-aligned NTv3 fine-tuning patterns.
 - Read [references/length-and-memory.md](references/length-and-memory.md) for divisibility, padding, and precision guidance.
 - Use [scripts/check_valid_length.py](scripts/check_valid_length.py) to validate concrete input lengths.
 - Use [scripts/run_track_prediction.py](scripts/run_track_prediction.py) for region-level prediction and plotting.

@@ -12,6 +12,7 @@ tags:
     - evo2-inference
   fine-tuning:
     - dnabert2
+    - nucleotide-transformer-v3
     - bpnet
     - basset-workflows
   track-prediction:

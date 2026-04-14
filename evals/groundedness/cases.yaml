@@ -25,3 +25,9 @@ cases:
     expected_primary_skill: dnabert2
     required_constraint_contains: transformers
     forbidden_substring: fake_dataset_field
+  - id: grounded_005
+    query: "Use $nucleotide-transformer-v3 for bigwig fine-tuning with species-conditioned setup and compute limits."
+    task: fine-tuning
+    expected_primary_skill: nucleotide-transformer-v3
+    required_constraint_contains: length
+    forbidden_substring: invented_ntv3_cli_train_py

@@ -11,7 +11,7 @@ All 11 packaged skills. Individual `SKILL.md` files are the operational source o
 | `dnabert2` | transformer-embedding-and-finetuning | embedding, gue-evaluation, fine-tuning, csv-validation | dnabert2, zhihan1996/DNABERT-2-117M, gue | `skills/dnabert2` | [SKILL.md](../skills/dnabert2/SKILL.md) |
 | `evo2-inference` | genome-language-model-inference | environment-setup, forward, embedding, generation, hosted-api | evo2, nvcf, flash-attn | `skills/evo2-inference` | [SKILL.md](../skills/evo2-inference/SKILL.md) |
 | `gpn-models` | phylogenetic-language-models | framework-selection, loading, training, variant-scoring | gpn, phylogpn, gpn-star | `skills/gpn-models` | [SKILL.md](../skills/gpn-models/SKILL.md) |
-| `nucleotide-transformer-v3` | transformers-ntv3 | environment-setup, embedding, track-prediction, troubleshooting | ntv3, species-conditioning, post-trained | `skills/nucleotide-transformer-v3` | [SKILL.md](../skills/nucleotide-transformer-v3/SKILL.md) |
+| `nucleotide-transformer-v3` | transformers-ntv3 | environment-setup, embedding, fine-tuning, track-prediction, troubleshooting | ntv3, species-conditioning, post-trained, bigwig, annotation | `skills/nucleotide-transformer-v3` | [SKILL.md](../skills/nucleotide-transformer-v3/SKILL.md) |
 | `segment-nt` | segmentation-heads | segmentation-inference, rescaling-factor, constraints, troubleshooting | segmentnt, segmentenformer, segmentborzoi | `skills/segment-nt` | [SKILL.md](../skills/segment-nt/SKILL.md) |
 
 ## Dev Skills (disabled by default)
@@ -34,7 +34,7 @@ Dev skills require `--include-disabled` to participate in routing, linking, and 
 | `transformer-embedding-and-finetuning` | DNABERT-2 transformer for embeddings, GUE evaluation, and supervised fine-tuning from CSV. |
 | `genome-language-model-inference` | Evo 2 large genome language model. Supports local GPU and hosted NVCF API paths. |
 | `phylogenetic-language-models` | GPN family (GPN, PhyloGPN, GPN-Star) using multiple sequence alignments for variant scoring. |
-| `transformers-ntv3` | NTv3 species-conditioned transformer. Supports track prediction with species conditioning and post-trained checkpoints. |
+| `transformers-ntv3` | NTv3 species-conditioned transformer. Supports embedding, track prediction, and notebook-first fine-tuning workflows for bigwig/annotation objectives. |
 | `segmentation-heads` | SegmentNT family (SegmentNT, SegmentEnformer, SegmentBorzoi) for genomic element segmentation with rescaling constraints. |
 | `legacy-cnn-regulatory` | Classic Basset CNN (Torch7) for regulatory prediction and SAD analysis. Dev only. |
 | `profile-prediction-and-attribution` | BPNet profile prediction with SHAP-based attribution and motif integration. Dev only. |
