@@ -71,6 +71,7 @@ parse_cases() {
       min_outputs = "1"
       required_step_contains = ""
       required_expected_output_contains = ""
+      required_selected_skill = ""
     }
     function trim(s) {
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
@@ -86,7 +87,7 @@ parse_cases() {
     }
     function emit_case() {
       if (case_id != "") {
-        print case_id, query, task, min_steps, min_outputs, required_step_contains, required_expected_output_contains
+        print case_id, query, task, min_steps, min_outputs, required_step_contains, required_expected_output_contains, required_selected_skill
       }
     }
     /^[[:space:]]*-[[:space:]]id:[[:space:]]*/ {
@@ -100,6 +101,7 @@ parse_cases() {
       min_outputs = "1"
       required_step_contains = ""
       required_expected_output_contains = ""
+      required_selected_skill = ""
       next
     }
     /^[[:space:]]*query:[[:space:]]*/ {
@@ -136,6 +138,12 @@ parse_cases() {
       required_expected_output_contains = $0
       sub(/^[[:space:]]*required_expected_output_contains:[[:space:]]*/, "", required_expected_output_contains)
       required_expected_output_contains = unquote(required_expected_output_contains)
+      next
+    }
+    /^[[:space:]]*required_selected_skill:[[:space:]]*/ {
+      required_selected_skill = $0
+      sub(/^[[:space:]]*required_selected_skill:[[:space:]]*/, "", required_selected_skill)
+      required_selected_skill = unquote(required_selected_skill)
       next
     }
     END {
@@ -213,7 +221,7 @@ total=0
 passed=0
 failed=0
 
-while IFS=$'\x1f' read -r case_id query task min_steps min_outputs required_step_contains required_expected_output_contains; do
+while IFS=$'\x1f' read -r case_id query task min_steps min_outputs required_step_contains required_expected_output_contains required_selected_skill; do
   [[ -z "$case_id" ]] && continue
   total=$((total + 1))
 
@@ -266,6 +274,14 @@ while IFS=$'\x1f' read -r case_id query task min_steps min_outputs required_step
     failed=$((failed + 1))
     echo "fail: $case_id" >&2
     echo "  plan.selected_skill or plan.retry_policy is empty" >&2
+    continue
+  fi
+
+  if [[ -n "$required_selected_skill" && "$selected_skill" != "$required_selected_skill" ]]; then
+    failed=$((failed + 1))
+    echo "fail: $case_id" >&2
+    echo "  expected selected_skill: $required_selected_skill" >&2
+    echo "  got selected_skill: ${selected_skill:-none}" >&2
     continue
   fi
 

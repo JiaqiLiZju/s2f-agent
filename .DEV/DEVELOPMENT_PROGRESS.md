@@ -2463,3 +2463,73 @@ CI 任务包含：
   - `make -n bootstrap-evo2-light`
 
 - repo-level smoke test 已通过
+
+## 2026-04-15：Borzoi 应用并入 case-study（track_prediction + variant-effect）与回归增强
+
+### 本次目标
+
+- 在 `case-study/track_prediction` 与 `case-study/variant-effect` 中补齐 Borzoi 可执行流程（并行于既有 NTv3/AlphaGenome 流程，不替换原路径）。
+- 将 Borzoi 路由要求纳入回归断言，确保相关 query 稳定命中 `borzoi-workflows`。
+
+### 代码与脚本变更
+
+1. 新增 case-study 执行脚本
+
+- `case-study/track_prediction/run_borzoi_track_case.sh`
+  - 固定区间：`chr19:6700000-6732768`
+  - 默认模型资产目录：`case-study/borzoi_fast`
+  - 调用：`skills/borzoi-workflows/scripts/run_borzoi_track_prediction.py`
+  - 校验输出：`trackplot/png + top_tracks/tsv + track_prediction/npz + result/json`
+
+- `case-study/variant-effect/run_borzoi_variant_case.sh`
+  - 固定位点：`hg38 chr12:1000000 ALT=G`
+  - 默认模型资产目录：`case-study/borzoi_fast`
+  - 调用：`skills/borzoi-workflows/scripts/run_borzoi_predict.py`
+  - 校验输出：`trackplot/png + variant/tsv + tracks/npz + result/json`
+
+2. Borzoi 执行兼容性修复
+
+- `skills/borzoi-workflows/scripts/run_borzoi_predict.py`
+  - 前向调用方式与本地 `baskerville.SeqNN` 接口对齐（`model(x, dtype=...)`）。
+  - `window-size` 默认读取模型 `params.json` 中 `seq_length`，避免与权重输入长度不匹配。
+
+- `skills/borzoi-workflows/scripts/run_borzoi_track_prediction.py`（新增）
+  - 提供 Borzoi fastpath track prediction CLI。
+  - 输出 `npz/tsv/png/json`，并记录 input/output window、stride、shape 等元信息。
+
+3. 回归与评测增强
+
+- `case-study/run_cases.sh`
+  - `run_case` 新增可选断言：`expected_selected_skill`
+  - 新增 `A8`（Borzoi track-prediction）与 `A9`（Borzoi variant-effect）
+  - 断言 `selected_skill=borzoi-workflows`
+
+- `scripts/validate_task_success.sh`
+  - task_success case schema 新增可选字段：`required_selected_skill`
+  - 若配置该字段，强制 `plan.selected_skill` 精确匹配
+
+- `evals/task_success/cases.yaml`
+  - 新增 `task_success_016`（Borzoi track-prediction）
+  - 新增 `task_success_017`（Borzoi variant-effect）
+
+- `docs/evals.md`
+  - 补充 `required_selected_skill` 字段说明与 Borzoi 示例
+
+### 测试与结果
+
+1. 脚本层（真实执行）
+
+- `bash case-study/track_prediction/run_borzoi_track_case.sh` -> 通过
+- `bash case-study/variant-effect/run_borzoi_variant_case.sh` -> 通过
+- 结果：
+  - track `status=success`, `preds_shape=(6144, 89)`
+  - variant `status=success`, `ref/alt/sad shape=(6144, 89)`
+
+2. case-study 回归
+
+- `bash case-study/run_cases.sh --case A8` -> 通过
+- `bash case-study/run_cases.sh --case A9` -> 通过
+
+3. task_success 评测
+
+- `bash scripts/validate_task_success.sh` -> `17/17 passed`（含新增 Borzoi 用例）

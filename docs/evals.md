@@ -229,6 +229,14 @@ For NTv3 case-study flows, keep assertions process-oriented:
   min_expected_outputs: 2
   required_step_contains: "nucleotide-transformer-v3-fine-tuning-workflow"
   required_expected_output_contains: "eval-metrics.json"
+
+- id: task_success_016
+  query: "...borzoi-workflows track prediction on hg38 chr19 with output head..."
+  task: track-prediction
+  min_runnable_steps: 1
+  min_expected_outputs: 2
+  required_selected_skill: "borzoi-workflows"
+  required_step_contains: "borzoi-workflows-track-prediction-workflow"
 ```
 
 Fields:
@@ -239,6 +247,7 @@ Fields:
 | `min_expected_outputs` | Minimum number of entries in `plan.expected_outputs` |
 | `required_step_contains` | Substring that must appear in at least one runnable step |
 | `required_expected_output_contains` | Substring that must appear in at least one expected output |
+| `required_selected_skill` | If set, `plan.selected_skill` must exactly match this skill id |
 
 Run:
 

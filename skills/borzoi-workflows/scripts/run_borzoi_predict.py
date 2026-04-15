@@ -76,8 +76,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--window-size",
         type=int,
-        default=524288,
-        help="Borzoi input window size in bp. Default: 524288.",
+        default=None,
+        help="Optional input window size in bp. Defaults to model seq_length from params.json.",
     )
     parser.add_argument(
         "--max-plot-tracks",
@@ -119,10 +119,7 @@ def load_targets(targets_txt: Path) -> list[dict]:
 
 def run_borzoi_forward(model, seqs_1hot: np.ndarray) -> np.ndarray:
     """Run Borzoi forward pass. Returns predictions array [batch, length, tracks]."""
-    import tensorflow as tf
-    seq_tensor = tf.cast(seqs_1hot, dtype=tf.float32)
-    preds = model(seq_tensor, training=False)
-    return preds.numpy()
+    return model(seqs_1hot, dtype="float32")
 
 
 def one_hot_encode(seq: str) -> np.ndarray:
@@ -165,15 +162,29 @@ def main() -> int:
         if not p.exists():
             raise SystemExit(f"Missing required model asset: {p}")
 
+    with params_path.open() as fh:
+        params = json.load(fh)
+
+    model_seq_length = int(params.get("model", {}).get("seq_length", 0))
+    window_size = args.window_size if args.window_size is not None else model_seq_length
+    if model_seq_length and window_size != model_seq_length:
+        print(
+            f"[warn] overriding --window-size={window_size} to model seq_length={model_seq_length}",
+            flush=True,
+        )
+        window_size = model_seq_length
+    if window_size <= 0:
+        raise ValueError("Unable to resolve a positive window size.")
+
     # Build window centered on variant
-    half = args.window_size // 2
+    half = window_size // 2
     win_start = max(0, position - 1 - half)  # convert to 0-based
-    win_end = win_start + args.window_size
+    win_end = win_start + window_size
 
     print(f"[1/6] fetching REF sequence {chrom}:{win_start}-{win_end} from UCSC...", flush=True)
     ref_seq = fetch_ucsc_sequence(args.assembly, chrom, win_start, win_end)
-    if len(ref_seq) != args.window_size:
-        raise RuntimeError(f"Sequence length mismatch: expected {args.window_size}, got {len(ref_seq)}")
+    if len(ref_seq) != window_size:
+        raise RuntimeError(f"Sequence length mismatch: expected {window_size}, got {len(ref_seq)}")
 
     variant_idx = position - 1 - win_start
     if ref is None:
@@ -195,11 +206,7 @@ def main() -> int:
     alt_seq = ref_seq[:variant_idx] + alt + ref_seq[variant_idx + 1:]
 
     print("[2/6] loading Borzoi model...", flush=True)
-    import tensorflow as tf
     from baskerville import seqnn
-
-    with params_path.open() as fh:
-        params = json.load(fh)
 
     model = seqnn.SeqNN(params["model"])
     model.restore(str(model_path))
@@ -278,7 +285,7 @@ def main() -> int:
         "alt": alt,
         "window_start_0based": win_start,
         "window_end_0based": win_end,
-        "window_size": args.window_size,
+        "window_size": int(window_size),
         "coordinate_convention": {
             "position": "1-based",
             "window": "0-based [start, end)",
