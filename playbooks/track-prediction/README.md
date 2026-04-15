@@ -27,9 +27,10 @@ Optional context that improves response quality:
 
 ## Skill Selection Heuristics
 
-1. Prefer `nucleotide-transformer-v3` for NTv3 species-conditioned outputs.
-2. Prefer `segment-nt` for SegmentNT-family segmentation-style outputs.
-3. Prefer `borzoi-workflows` for Borzoi tutorial and interpretation workflows.
+1. Prefer `alphagenome-api` when the request explicitly targets AlphaGenome API / `predict_interval` / ontology-conditioned heads (for example `RNA_SEQ`).
+2. Prefer `nucleotide-transformer-v3` for NTv3 species-conditioned outputs.
+3. Prefer `segment-nt` for SegmentNT-family segmentation-style outputs.
+4. Prefer `borzoi-workflows` for Borzoi tutorial and interpretation workflows.
 
 ## Runbook (Minimal Reproducible Commands)
 

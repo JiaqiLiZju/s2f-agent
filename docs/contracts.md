@@ -82,7 +82,7 @@ When a plan step fails, the recovery policy defines the retry strategy and order
 | `variant-effect` | clarify-missing-inputs-then-connectivity-proxy-retry-once | borzoi-workflows, gpn-models, evo2-inference |
 | `embedding` | clarify-embedding-target-then-retry-once | nucleotide-transformer-v3, evo2-inference |
 | `fine-tuning` | clarify-dataset-schema-then-retry-once | dnabert2 |
-| `track-prediction` | clarify-output-head-then-retry-once | borzoi-workflows, segment-nt |
+| `track-prediction` | clarify-output-head-then-retry-once | alphagenome-api, borzoi-workflows, segment-nt |
 
 Source: `registry/recovery_policies.yaml`
 

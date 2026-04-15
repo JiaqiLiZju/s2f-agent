@@ -74,7 +74,7 @@ First run after bootstrap:
 | --- | --- | --- | --- | --- |
 | Variant-effect analysis | Compare REF vs ALT impact or prioritize variants | `alphagenome-api`, `borzoi-workflows`, `gpn-models`, `evo2-inference` | [`variant-effect`](./playbooks/variant-effect/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
 | Embedding and representation | Produce sequence embeddings for downstream analyses | `dnabert2`, `nucleotide-transformer-v3`, `nucleotide-transformer`, `evo2-inference` | [`embedding`](./playbooks/embedding/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
-| Track prediction workflows | Run sequence-to-signal prediction with model-appropriate constraints | `nucleotide-transformer-v3`, `borzoi-workflows`, `segment-nt` | [`track-prediction`](./playbooks/track-prediction/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
+| Track prediction workflows | Run sequence-to-signal prediction with model-appropriate constraints | `alphagenome-api`, `nucleotide-transformer-v3`, `borzoi-workflows`, `segment-nt` | [`track-prediction`](./playbooks/track-prediction/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
 | Fine-tuning and training setup | Prepare schemas, training configs, and model-specific run paths | `dnabert2`, `bpnet`, `basset-workflows` | [`fine-tuning`](./playbooks/fine-tuning/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
 | Environment bring-up and migration | Build reproducible stacks and verify operational readiness | `skill-factory` plus stack-specific skills | [`environment-setup`](./playbooks/environment-setup/README.md) | [`scripts-reference`](./docs/scripts-reference.md), [`architecture`](./docs/architecture.md) |
 
@@ -90,7 +90,7 @@ Status definition:
 
 | Skill ID | Status | Path | Best for | Explicit invocation | Docs |
 | --- | --- | --- | --- | --- | --- |
-| `alphagenome-api` | Stable | `skills/alphagenome-api` | AlphaGenome setup, variant prediction, plotting, troubleshooting | `$alphagenome-api` | [`SKILL.md`](./skills/alphagenome-api/SKILL.md) · [`references/`](./skills/alphagenome-api/references/) |
+| `alphagenome-api` | Stable | `skills/alphagenome-api` | AlphaGenome setup, variant-effect, interval/track prediction, plotting, troubleshooting | `$alphagenome-api` | [`SKILL.md`](./skills/alphagenome-api/SKILL.md) · [`references/`](./skills/alphagenome-api/references/) |
 | `basset-workflows` | Dev | `skills-dev/basset-workflows` | Legacy Basset Torch7 preprocessing, prediction, interpretation, SAD | `$basset-workflows` | [`SKILL.md`](./skills-dev/basset-workflows/SKILL.md) · [`references/`](./skills-dev/basset-workflows/references/) |
 | `bpnet` | Dev | `skills-dev/bpnet` | BPNet preprocessing, train/predict/SHAP, motif integration | `$bpnet` | [`SKILL.md`](./skills-dev/bpnet/SKILL.md) · [`references/`](./skills-dev/bpnet/references/) |
 | `borzoi-workflows` | Stable | `skills/borzoi-workflows` | Borzoi setup, tutorials, variant scoring, interpretation | `$borzoi-workflows` | [`SKILL.md`](./skills/borzoi-workflows/SKILL.md) · [`references/`](./skills/borzoi-workflows/references/) |

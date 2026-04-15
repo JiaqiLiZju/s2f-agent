@@ -73,7 +73,7 @@ When no explicit skill is mentioned, the router selects from these defaults (ord
 | `embedding` | dnabert2, nucleotide-transformer, nucleotide-transformer-v3, evo2-inference |
 | `variant-effect` | alphagenome-api, borzoi-workflows, gpn-models, evo2-inference |
 | `fine-tuning` | dnabert2, nucleotide-transformer-v3, bpnet, basset-workflows |
-| `track-prediction` | nucleotide-transformer-v3, segment-nt, borzoi-workflows |
+| `track-prediction` | alphagenome-api, nucleotide-transformer-v3, segment-nt, borzoi-workflows |
 | `troubleshooting` | skill that owns the failing stack or model family |
 
 Source: `agent/ROUTING.md`

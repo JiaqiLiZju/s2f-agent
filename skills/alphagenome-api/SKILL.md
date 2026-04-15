@@ -1,6 +1,6 @@
 ---
 name: alphagenome-api
-description: Build and debug AlphaGenome Python API workflows for genomic interval and variant-effect prediction, including API key setup, package installation, `dna_client` creation, selecting `requested_outputs`, adding `ontology_terms`, plotting results, and troubleshooting environment or response issues. Use when Codex needs to write, fix, explain, or review code and notebooks that use `alphagenome`, `dna_client`, `genome.Interval`, `genome.Variant`, AlphaGenome plotting helpers, or AlphaGenome API prediction workflows.
+description: Build and debug AlphaGenome Python API workflows for variant-effect and track-prediction tasks, including API key setup, package installation, `dna_client` creation, selecting `requested_outputs`, adding `ontology_terms`, plotting results, and troubleshooting environment or response issues. Use when Codex needs to write, fix, explain, or review code and notebooks that use `alphagenome`, `dna_client`, `genome.Interval`, `genome.Variant`, `predict_variant`, `predict_interval`, AlphaGenome plotting helpers, or AlphaGenome API prediction workflows.
 ---
 
 # AlphaGenome API
@@ -29,8 +29,9 @@ Use this skill to produce conservative AlphaGenome Python snippets and notebook 
 
 3. Choose the prediction path.
 - Use `genome.Variant` plus `model.predict_variant(...)` when the task compares reference and alternate alleles.
-- Confirm the exact client method from the installed package or official docs before writing interval-only code, because the bundled source only demonstrates the variant path.
+- Use `model.predict_interval(...)` for interval-only track prediction requests.
 - For `model.predict_variant(...)`, use a supported interval width (currently `16384`, `131072`, `524288`, or `1048576` bp), then verify this list against the installed package when needed.
+- For `model.predict_interval(...)`, keep each requested inference interval at supported widths and within 1,000,000 bp.
 - Keep each interval at or below 1,000,000 base pairs.
 
 4. Limit the request.
@@ -51,6 +52,7 @@ Treat the following names as grounded by the bundled AlphaGenome README:
 - `genome.Interval`
 - `genome.Variant`
 - `dna_client.create`
+- `model.predict_interval`
 - `model.predict_variant`
 - `dna_client.OutputType.RNA_SEQ`
 - `plot_components.plot`
@@ -66,6 +68,50 @@ Verify any other method, output enum, or helper against the installed package or
 - Call out when you are inferring a coordinate window, assay, or ontology term.
 - Push back on large-batch workloads that exceed the README guidance.
 - Redact secrets in examples and transcripts; never echo API keys.
+
+## Track Prediction (BED / Single Interval)
+
+Use `scripts/run_alphagenome_track_prediction_bed_batch.py` for real `predict_interval` workflows.
+
+**Input modes:**
+- `--bed`: run interval track prediction for every BED row (BED uses 0-based half-open intervals)
+- `--interval chr:start-end`: run one interval with the same output schema
+
+**Key behaviours:**
+- Supports `--species human|mouse` and maps to AlphaGenome organism enums
+- Uses `model.predict_interval(...)` directly
+- Supports head selection via `--output-head` (default `RNA_SEQ`)
+- Supports ontology context via repeatable `--ontology-term` (default `UBERON:0001157`)
+- Auto-selects nearest supported inference width (`16384/131072/524288/1048576`) unless `--interval-width` is given
+- Crops back to requested interval before saving outputs
+- Retries client create with proxy env vars if first attempt times out
+
+**Output contract (per interval):**
+- `*_result.json`
+- `*_trackplot.png`
+- `*_track_prediction.npz`
+- batch/summary file: `*_bed_batch_summary.json`
+
+**Invocation (BED batch):**
+```bash
+python skills/alphagenome-api/scripts/run_alphagenome_track_prediction_bed_batch.py \
+  --bed case-study-playbooks/track_prediction/bed/Test.interval.bed \
+  --species human \
+  --assembly hg38 \
+  --output-head RNA_SEQ \
+  --ontology-term UBERON:0001157 \
+  --output-dir case-study-playbooks/track_prediction/alphagenome_results
+```
+
+**Invocation (single interval):**
+```bash
+python skills/alphagenome-api/scripts/run_alphagenome_track_prediction_bed_batch.py \
+  --interval chr19:6700000-6732768 \
+  --species human \
+  --assembly hg38 \
+  --output-head RNA_SEQ \
+  --output-dir output/alphagenome_track
+```
 
 ## Batch VCF Prediction
 

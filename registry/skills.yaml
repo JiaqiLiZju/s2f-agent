@@ -7,6 +7,7 @@ skills:
     family: api-variant-prediction
     tasks:
       - variant-effect
+      - track-prediction
       - interval-prediction
       - plotting
       - troubleshooting
@@ -14,6 +15,9 @@ skills:
       - alphagenome
       - dna_client
       - predict_variant
+      - predict_interval
+      - rna_seq
+      - track_prediction
   - id: basset-workflows
     path: skills-dev/basset-workflows
     enabled: false

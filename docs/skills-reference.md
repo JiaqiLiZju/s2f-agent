@@ -6,7 +6,7 @@ All 11 packaged skills. Individual `SKILL.md` files are the operational source o
 
 | Skill ID | Family | Tasks | Key triggers | Path | Docs |
 |---|---|---|---|---|---|
-| `alphagenome-api` | api-variant-prediction | variant-effect, interval-prediction, plotting, troubleshooting | alphagenome, dna_client, predict_variant | `skills/alphagenome-api` | [SKILL.md](../skills/alphagenome-api/SKILL.md) |
+| `alphagenome-api` | api-variant-prediction | variant-effect, track-prediction, interval-prediction, plotting, troubleshooting | alphagenome, dna_client, predict_variant, predict_interval | `skills/alphagenome-api` | [SKILL.md](../skills/alphagenome-api/SKILL.md) |
 | `borzoi-workflows` | sequence-to-signal | environment-setup, track-prediction, variant-effect, interpretation, tutorial-playbooks | borzoi, westminster, baskerville, human_gtex | `skills/borzoi-workflows` | [SKILL.md](../skills/borzoi-workflows/SKILL.md) |
 | `dnabert2` | transformer-embedding-and-finetuning | embedding, gue-evaluation, fine-tuning, csv-validation | dnabert2, zhihan1996/DNABERT-2-117M, gue | `skills/dnabert2` | [SKILL.md](../skills/dnabert2/SKILL.md) |
 | `evo2-inference` | genome-language-model-inference | environment-setup, forward, embedding, generation, hosted-api | evo2, nvcf, flash-attn | `skills/evo2-inference` | [SKILL.md](../skills/evo2-inference/SKILL.md) |
@@ -29,7 +29,7 @@ Dev skills require `--include-disabled` to participate in routing, linking, and 
 
 | Family | Description |
 |---|---|
-| `api-variant-prediction` | Cloud API-based variant effect prediction (AlphaGenome). Requires `ALPHAGENOME_API_KEY`. |
+| `api-variant-prediction` | Cloud API-based variant-effect and interval/track prediction (AlphaGenome). Requires `ALPHAGENOME_API_KEY`. |
 | `sequence-to-signal` | Sequence-to-track prediction with multi-species Borzoi models. Strong for interval-based variant scoring and tissue-resolved track outputs. |
 | `transformer-embedding-and-finetuning` | DNABERT-2 transformer for embeddings, GUE evaluation, and supervised fine-tuning from CSV. |
 | `genome-language-model-inference` | Evo 2 large genome language model. Supports local GPU and hosted NVCF API paths. |

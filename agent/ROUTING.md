@@ -86,7 +86,7 @@ Answer format:
 - `embedding` -> `dnabert2`, `nucleotide-transformer`, `nucleotide-transformer-v3`, `evo2-inference`
 - `variant-effect` -> `alphagenome-api`, `borzoi-workflows`, `gpn-models`, `evo2-inference`
 - `fine-tuning` -> `dnabert2`, `nucleotide-transformer-v3`, `bpnet`, `basset-workflows`
-- `track-prediction` -> `nucleotide-transformer-v3`, `segment-nt`, `borzoi-workflows`
+- `track-prediction` -> `alphagenome-api`, `nucleotide-transformer-v3`, `segment-nt`, `borzoi-workflows`
 - `troubleshooting` -> pick the skill that owns the failing stack or model family
 
 Fine-tuning disambiguation rule:

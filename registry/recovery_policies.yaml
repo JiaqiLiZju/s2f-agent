@@ -19,5 +19,6 @@ policies:
   track-prediction:
     retry_policy: clarify-output-head-then-retry-once
     fallback_skills:
+      - alphagenome-api
       - borzoi-workflows
       - segment-nt

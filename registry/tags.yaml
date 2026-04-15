@@ -16,6 +16,7 @@ tags:
     - bpnet
     - basset-workflows
   track-prediction:
+    - alphagenome-api
     - nucleotide-transformer-v3
     - segment-nt
     - borzoi-workflows

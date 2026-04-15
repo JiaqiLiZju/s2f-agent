@@ -475,6 +475,99 @@ extract_ntv3_output_dir_from_query() {
   printf '%s\n' "$out"
 }
 
+extract_alphagenome_track_species_from_query() {
+  local query_lc="$1"
+  extract_ntv3_species_from_query "$query_lc"
+}
+
+extract_alphagenome_track_interval_from_query() {
+  local query_lc="$1"
+  extract_ntv3_interval_from_query "$query_lc"
+}
+
+extract_alphagenome_track_bed_path_from_query() {
+  local query_raw="$1"
+  extract_ntv3_bed_path_from_query "$query_raw"
+}
+
+extract_alphagenome_track_output_dir_from_query() {
+  local query_raw="$1"
+  local out=""
+  out="$(printf '%s\n' "$query_raw" | grep -Eio 'case-study-playbooks/[A-Za-z0-9._/-]*alphagenome_results[A-Za-z0-9._/-]*' | head -n 1 || true)"
+  if [[ -z "$out" ]]; then
+    out="$(printf '%s\n' "$query_raw" | grep -Eio 'output/[A-Za-z0-9._/-]*alphagenome[A-Za-z0-9._/-]*' | head -n 1 || true)"
+  fi
+  if [[ -z "$out" ]]; then
+    out="$(printf '%s\n' "$query_raw" | grep -Eio '[A-Za-z0-9._/-]*alphagenome_results[A-Za-z0-9._/-]*' | head -n 1 || true)"
+  fi
+  out="$(printf '%s\n' "$out" | sed -E "s/^[\"'()]+//; s/[\"'(),;:。；，]+$//")"
+  out="${out%/.}"
+  if [[ -z "$out" ]]; then
+    out="output/alphagenome_track"
+  fi
+  out="${out%/}"
+  if [[ -z "$out" ]]; then
+    out="output/alphagenome_track"
+  fi
+  printf '%s\n' "$out"
+}
+
+extract_alphagenome_track_head_from_query() {
+  local query_lc="$1"
+  if contains_token "$query_lc" "rna_seq" || contains_token "$query_lc" "rna-seq" || contains_token "$query_lc" "rna seq"; then
+    printf 'RNA_SEQ\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "atac"; then
+    printf 'ATAC\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "cage"; then
+    printf 'CAGE\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "dnase"; then
+    printf 'DNASE\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "chip_tf" || contains_token "$query_lc" "chip tf"; then
+    printf 'CHIP_TF\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "chip_histone" || contains_token "$query_lc" "chip histone"; then
+    printf 'CHIP_HISTONE\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "splice_sites" || contains_token "$query_lc" "splice sites"; then
+    printf 'SPLICE_SITES\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "splice_site_usage" || contains_token "$query_lc" "splice site usage"; then
+    printf 'SPLICE_SITE_USAGE\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "splice_junctions" || contains_token "$query_lc" "splice junctions"; then
+    printf 'SPLICE_JUNCTIONS\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "contact_maps" || contains_token "$query_lc" "contact maps"; then
+    printf 'CONTACT_MAPS\n'
+    return 0
+  fi
+  if contains_token "$query_lc" "procap"; then
+    printf 'PROCAP\n'
+    return 0
+  fi
+  printf '\n'
+}
+
+extract_alphagenome_ontology_term_from_query() {
+  local query_raw="$1"
+  local term=""
+  term="$(printf '%s\n' "$query_raw" | grep -Eio '(UBERON|CL):[0-9]+' | head -n 1 || true)"
+  printf '%s\n' "$term"
+}
+
 extract_alphagenome_assembly_from_query() {
   local query_lc="$1"
   extract_ntv3_assembly_from_query "$query_lc"
@@ -1194,6 +1287,142 @@ if [[ "$effective_task" == "track-prediction" && "$primary_skill" == "nucleotide
       plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "ntv3-track-fastpath-enabled")"
       plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "default-model:${ntv3_model}")"
       plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "default-output-dir:${ntv3_output_dir}")"
+    fi
+  fi
+fi
+
+if [[ "$effective_task" == "track-prediction" && "$primary_skill" == "alphagenome-api" ]]; then
+  ag_track_missing_non_head="$(remove_csv_item "$missing_csv" "output-head")"
+  ag_track_missing_non_head="$(remove_csv_item "$ag_track_missing_non_head" "species")"
+  ag_track_interval_csv="$(extract_alphagenome_track_interval_from_query "$query_lc")"
+  ag_track_bed_path="$(extract_alphagenome_track_bed_path_from_query "$query")"
+  ag_track_bed_resolved=""
+  ag_track_species="$(extract_alphagenome_track_species_from_query "$query_lc")"
+  ag_track_assembly="$(extract_alphagenome_assembly_from_query "$query_lc")"
+  ag_track_head="$(extract_alphagenome_track_head_from_query "$query_lc")"
+  ag_track_ontology="$(extract_alphagenome_ontology_term_from_query "$query")"
+  ag_track_output_dir="$(extract_alphagenome_track_output_dir_from_query "$query")"
+  ag_env_name="$(extract_alphagenome_env_from_query "$query")"
+  ag_env_prefix="$(resolve_conda_env_prefix "$ag_env_name")"
+  ag_conda_cmd=""
+  ag_track_chrom=""
+  ag_track_start=""
+  ag_track_end=""
+  ag_track_log_path=""
+  ag_track_summary_path=""
+  ag_track_step_cmd=""
+  ag_track_fallback_cmd=""
+  ag_track_prefix="alphagenome_track"
+
+  if [[ -z "$ag_track_species" ]]; then
+    ag_track_species="human"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "default-species:human")"
+  fi
+  if in_csv_list "species" "$missing_csv"; then
+    missing_csv="$(remove_csv_item "$missing_csv" "species")"
+    provided_csv="$(append_csv "$provided_csv" "species")"
+  fi
+  if in_csv_list "species" "$missing_canonical_csv"; then
+    missing_canonical_csv="$(remove_csv_item "$missing_canonical_csv" "species")"
+    provided_canonical_csv="$(append_csv "$provided_canonical_csv" "species")"
+  fi
+
+  if [[ -z "$ag_track_head" ]]; then
+    ag_track_head="RNA_SEQ"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "default-output-head:RNA_SEQ")"
+  fi
+  if in_csv_list "output-head" "$missing_csv"; then
+    missing_csv="$(remove_csv_item "$missing_csv" "output-head")"
+    provided_csv="$(append_csv "$provided_csv" "output-head")"
+  fi
+  if in_csv_list "output-head" "$missing_canonical_csv"; then
+    missing_canonical_csv="$(remove_csv_item "$missing_canonical_csv" "output-head")"
+    provided_canonical_csv="$(append_csv "$provided_canonical_csv" "output-head")"
+  fi
+
+  if [[ -z "$ag_track_ontology" ]]; then
+    ag_track_ontology="UBERON:0001157"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "default-ontology-term:UBERON:0001157")"
+  fi
+
+  if [[ -n "$ag_track_bed_path" ]]; then
+    ag_track_bed_resolved="$ag_track_bed_path"
+    if [[ ! -f "$ag_track_bed_resolved" && -f "$REPO_ROOT/$ag_track_bed_resolved" ]]; then
+      ag_track_bed_resolved="$REPO_ROOT/$ag_track_bed_resolved"
+    fi
+    if in_csv_list "sequence-or-interval" "$missing_csv"; then
+      missing_csv="$(remove_csv_item "$missing_csv" "sequence-or-interval")"
+      provided_csv="$(append_csv "$provided_csv" "sequence-or-interval")"
+      plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "sequence-or-interval-inferred-from-bed-path")"
+    fi
+    if in_csv_list "sequence-or-interval" "$missing_canonical_csv"; then
+      missing_canonical_csv="$(remove_csv_item "$missing_canonical_csv" "sequence-or-interval")"
+      provided_canonical_csv="$(append_csv "$provided_canonical_csv" "sequence-or-interval")"
+    fi
+  elif [[ -n "$ag_track_interval_csv" ]]; then
+    IFS=',' read -r ag_track_chrom ag_track_start ag_track_end <<<"$ag_track_interval_csv"
+    if [[ -n "$ag_track_chrom" && -n "$ag_track_start" && -n "$ag_track_end" ]]; then
+      if in_csv_list "sequence-or-interval" "$missing_csv"; then
+        missing_csv="$(remove_csv_item "$missing_csv" "sequence-or-interval")"
+        provided_csv="$(append_csv "$provided_csv" "sequence-or-interval")"
+        plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "sequence-or-interval-inferred-from-interval-token")"
+      fi
+      if in_csv_list "sequence-or-interval" "$missing_canonical_csv"; then
+        missing_canonical_csv="$(remove_csv_item "$missing_canonical_csv" "sequence-or-interval")"
+        provided_canonical_csv="$(append_csv "$provided_canonical_csv" "sequence-or-interval")"
+      fi
+    fi
+  fi
+
+  if [[ -n "$ag_env_prefix" ]]; then
+    ag_conda_cmd="conda run -p ${ag_env_prefix}"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "conda-env-auto-resolved:prefix")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "conda-env-prefix:${ag_env_prefix}")"
+  else
+    ag_conda_cmd="conda run -n ${ag_env_name}"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "conda-env-auto-resolved:name")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "conda-env-name:${ag_env_name}")"
+  fi
+
+  ag_track_missing_non_head="$(remove_csv_item "$missing_csv" "output-head")"
+  ag_track_missing_non_head="$(remove_csv_item "$ag_track_missing_non_head" "species")"
+
+  ag_track_log_path="${ag_track_output_dir}/alphagenome_track_prediction.log"
+  ag_track_summary_path="${ag_track_output_dir}/${ag_track_prefix}_bed_batch_summary.json"
+
+  if [[ -n "$ag_track_assembly" && -n "$ag_track_bed_path" && -z "$ag_track_missing_non_head" ]]; then
+    ag_track_step_cmd="set -a; source .env; set +a; mkdir -p ${ag_track_output_dir}; ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_track_prediction_bed_batch.py --bed ${ag_track_bed_resolved} --species ${ag_track_species} --assembly ${ag_track_assembly} --output-head ${ag_track_head} --ontology-term ${ag_track_ontology} --output-dir ${ag_track_output_dir} --output-prefix ${ag_track_prefix} 2>&1 | tee ${ag_track_log_path}"
+    ag_track_fallback_cmd="set -a; source .env; set +a; mkdir -p ${ag_track_output_dir}; grpc_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 https_proxy=http://127.0.0.1:7890 ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_track_prediction_bed_batch.py --bed ${ag_track_bed_resolved} --species ${ag_track_species} --assembly ${ag_track_assembly} --output-head ${ag_track_head} --ontology-term ${ag_track_ontology} --output-dir ${ag_track_output_dir} --output-prefix ${ag_track_prefix} --request-timeout-sec 120 2>&1 | tee ${ag_track_log_path}"
+
+    plan_steps_csv="$ag_track_step_cmd"
+    plan_expected_outputs_csv=""
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ag_track_summary_path}")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-plot:${ag_track_output_dir}/${ag_track_prefix}_*_trackplot.png")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ag_track_output_dir}/${ag_track_prefix}_*_result.json")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ag_track_output_dir}/${ag_track_prefix}_*_track_prediction.npz")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ag_track_log_path}")"
+    plan_fallbacks_csv="$(append_csv "$plan_fallbacks_csv" "$ag_track_fallback_cmd")"
+
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "alphagenome-track-bed-batch-fastpath-enabled")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "track-interval-coordinate-convention-0based-half-open")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "inference-window-auto-expanded-to-supported-width")"
+  elif [[ -n "$ag_track_assembly" && -n "$ag_track_chrom" && -n "$ag_track_start" && -n "$ag_track_end" && -z "$ag_track_missing_non_head" ]]; then
+    if [[ "$ag_track_end" =~ ^[0-9]+$ && "$ag_track_start" =~ ^[0-9]+$ && "$ag_track_end" -gt "$ag_track_start" ]]; then
+      ag_track_step_cmd="set -a; source .env; set +a; mkdir -p ${ag_track_output_dir}; ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_track_prediction_bed_batch.py --interval ${ag_track_chrom}:${ag_track_start}-${ag_track_end} --species ${ag_track_species} --assembly ${ag_track_assembly} --output-head ${ag_track_head} --ontology-term ${ag_track_ontology} --output-dir ${ag_track_output_dir} --output-prefix ${ag_track_prefix} 2>&1 | tee ${ag_track_log_path}"
+      ag_track_fallback_cmd="set -a; source .env; set +a; mkdir -p ${ag_track_output_dir}; grpc_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 https_proxy=http://127.0.0.1:7890 ${ag_conda_cmd} python skills/alphagenome-api/scripts/run_alphagenome_track_prediction_bed_batch.py --interval ${ag_track_chrom}:${ag_track_start}-${ag_track_end} --species ${ag_track_species} --assembly ${ag_track_assembly} --output-head ${ag_track_head} --ontology-term ${ag_track_ontology} --output-dir ${ag_track_output_dir} --output-prefix ${ag_track_prefix} --request-timeout-sec 120 2>&1 | tee ${ag_track_log_path}"
+
+      plan_steps_csv="$ag_track_step_cmd"
+      plan_expected_outputs_csv=""
+      plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ag_track_summary_path}")"
+      plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-plot:${ag_track_output_dir}/${ag_track_prefix}_${ag_track_chrom}_${ag_track_start}_${ag_track_end}_trackplot.png")"
+      plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ag_track_output_dir}/${ag_track_prefix}_${ag_track_chrom}_${ag_track_start}_${ag_track_end}_result.json")"
+      plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ag_track_output_dir}/${ag_track_prefix}_${ag_track_chrom}_${ag_track_start}_${ag_track_end}_track_prediction.npz")"
+      plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ag_track_log_path}")"
+      plan_fallbacks_csv="$(append_csv "$plan_fallbacks_csv" "$ag_track_fallback_cmd")"
+
+      plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "alphagenome-track-single-interval-fastpath-enabled")"
+      plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "track-interval-coordinate-convention-0based-half-open")"
+      plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "inference-window-auto-expanded-to-supported-width")"
     fi
   fi
 fi
