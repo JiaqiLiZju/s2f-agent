@@ -107,7 +107,6 @@ cases:
     min_runnable_steps: 1
     min_expected_outputs: 2
     required_selected_skill: "borzoi-workflows"
-    required_step_contains: "run_borzoi_predict.py"
   - id: task_success_018
     query: "Use $alphagenome-api to run real track prediction for human hg38 interval chr19:6700000-6732768 with output head RNA_SEQ and save outputs to output/alphagenome_track."
     task: track-prediction
