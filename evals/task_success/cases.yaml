@@ -36,13 +36,9 @@ cases:
     required_step_contains: "python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py"
     required_expected_output_contains: "output/alphagenome"
   - id: task_success_007
-    # Known gaps (tracked in DEVELOPMENT_PLAN.md VCF 输入标准化规划):
-    #   1. Agent routes to case-study/run_vcf_effect.py instead of
-    #      skills/alphagenome-api/scripts/run_alphagenome_vcf_batch.py
-    #   2. Agent does not propagate user-specified output dir into expected_outputs
-    # required_step_contains and required_expected_output_contains intentionally
-    # omitted until skill script is promoted as primary VCF path.
-    query: "Use $alphagenome-api to run VCF batch variant effect prediction on case-study/Test.geuvadis.vcf, assembly hg38, output to output/alphagenome/."
+    # VCF batch variant-effect routing regression case (keep assertions generic
+    # to avoid over-coupling to a single runnable step string).
+    query: "Use $alphagenome-api to run VCF batch variant effect prediction on case-study-playbooks/variant-effect/vcf/Test.geuvadis.vcf, assembly hg38, output to output/alphagenome/."
     task: variant-effect
     min_runnable_steps: 1
     min_expected_outputs: 2

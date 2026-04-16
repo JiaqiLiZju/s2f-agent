@@ -358,7 +358,7 @@ def run_batch(
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Batch AlphaGenome SNP variant-effect prediction from VCF")
-    p.add_argument("--input", default="case-study/Test.geuvadis.vcf")
+    p.add_argument("--input", default="case-study-playbooks/variant-effect/vcf/Test.geuvadis.vcf")
     p.add_argument("--assembly", default="hg19",
                    help="Genome assembly (default: hg19 for GEUVADIS)")
     p.add_argument("--output-dir", default="output/alphagenome/case-study")

@@ -31,14 +31,16 @@ Optional context that improves routing quality:
 3. Prefer `gpn-models` for framework-selection-heavy variant analysis.
 4. Consider `evo2-inference` when local GPU constraints suggest hosted fallback.
 
-## Runbook (Minimal Reproducible Commands)
+## Execution Modes
+
+### 1) Orchestration (`run_agent.sh`)
 
 Text output:
 
 ```bash
 bash scripts/run_agent.sh \
   --task variant-effect \
-  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --query 'Use $alphagenome-api variant-effect on hg38 chr12 position 1000000 ALT G and save outputs to <output_dir>' \
   --format text
 ```
 
@@ -47,33 +49,51 @@ JSON output:
 ```bash
 bash scripts/run_agent.sh \
   --task variant-effect \
-  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --query 'Use $alphagenome-api variant-effect on hg38 chr12 position 1000000 ALT G and save outputs to <output_dir>' \
   --format json
 ```
 
-Dry-run execution validation:
+Expected checkpoint:
+
+- `decision: route`
+- `missing_inputs: []`
+- `plan.runnable_steps` and `plan.expected_outputs` are present
+
+### 2) Plan Validation (`execute_plan.sh`)
+
+Dry-run:
 
 ```bash
 bash scripts/execute_plan.sh \
   --task variant-effect \
-  --query 'Use $alphagenome-api variant-effect on hg38 chr12 REF A ALT G' \
+  --query 'Use $alphagenome-api variant-effect on hg38 chr12 position 1000000 ALT G and save outputs to <output_dir>' \
   --format text
 ```
 
-Optional AlphaGenome real-run fast path:
+Real execution:
+
+```bash
+set -a; source .env; set +a
+bash scripts/execute_plan.sh \
+  --task variant-effect \
+  --query 'Use $alphagenome-api variant-effect on hg38 chr12 position 1000000 ALT G and save outputs to <output_dir>' \
+  --run \
+  --format text
+```
+
+### 3) AlphaGenome Single-Variant Real Run
 
 ```bash
 set -a; source .env; set +a
 conda run -p /path/to/alphagenome-py310-env \
   python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py \
-  --chrom chr12 \
-  --position 1000000 \
-  --alt G \
+  --variant-spec chr12:1000000:G \
   --assembly hg38 \
-  --output-dir output/alphagenome
+  --output-dir <output_dir> \
+  --request-timeout-sec 120
 ```
 
-If client creation fails with `grpc.FutureTimeoutError`, retry via proxy:
+If `dna_client.create(...)` times out, retry once with proxy variables:
 
 ```bash
 set -a; source .env; set +a
@@ -82,77 +102,59 @@ http_proxy=http://127.0.0.1:7890 \
 https_proxy=http://127.0.0.1:7890 \
 conda run -p /path/to/alphagenome-py310-env \
   python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py \
-  --chrom chr12 \
-  --position 1000000 \
-  --alt G \
+  --variant-spec chr12:1000000:G \
   --assembly hg38 \
-  --output-dir output/alphagenome \
+  --output-dir <output_dir> \
   --request-timeout-sec 120
 ```
 
-## Learn (Step-by-step + checkpoints + common failures)
-
-Step 1: run high-confidence orchestration.
+### 4) AlphaGenome VCF Batch Real Run
 
 ```bash
-bash scripts/run_agent.sh \
-  --task variant-effect \
-  --query 'Use $alphagenome-api predict_variant on hg38 chrom=chr12 position=1_000_000 alt=G and save outputs to output/alphagenome' \
-  --format text
+set -a; source .env; set +a
+conda run -p /path/to/alphagenome-py310-env \
+  python skills/alphagenome-api/scripts/run_alphagenome_vcf_batch.py \
+  --input <variants.vcf> \
+  --assembly hg38 \
+  --output-dir <output_dir> \
+  --non-interactive \
+  --request-timeout-sec 120
 ```
 
-Expected checkpoint:
+Notes:
 
-- `decision: route`
-- `required_inputs_source: task-contract:variant-effect`
-- `missing_inputs: none`
+- Output file pattern is `<vcf_stem>_tissues.tsv`.
+- `run_alphagenome_vcf_batch.py` retries `dna_client.create(...)` once with proxy variables by default when the first attempt times out.
+- Use `--proxy-url ''` to disable retry or `--proxy-url <url>` to set a custom proxy endpoint.
 
-Step 2: inspect machine-consumable output.
+## Result Acceptance Template
 
+1. File exists and is non-empty.
 ```bash
-bash scripts/run_agent.sh \
-  --task variant-effect \
-  --query 'Use $alphagenome-api predict_variant on hg38 chrom=chr12 position=1_000_000 alt=G and save outputs to output/alphagenome' \
-  --format json
+test -s <result_file> && echo "ok: result file exists and non-empty"
 ```
 
-Expected checkpoint:
-
-- `primary_skill` and `secondary_skills` are populated
-- `plan.runnable_steps` and `plan.expected_outputs` are present
-
-Step 3: dry-run plan execution.
-
+2. `assembly` column is consistent.
 ```bash
-bash scripts/execute_plan.sh \
-  --task variant-effect \
-  --query 'Use $alphagenome-api predict_variant on hg38 chrom=chr12 position=1_000_000 alt=G and save outputs to output/alphagenome' \
-  --format text
+awk -F'\t' 'NR>1{c[$7]++} END{for(k in c) print k"\t"c[k]}' <result_file>
 ```
 
-Expected checkpoint:
+3. `status` distribution is visible.
+```bash
+awk -F'\t' 'NR==1{for(i=1;i<=NF;i++) if($i=="status") s=i; next} {cnt[$s]++} END{for(k in cnt) print k"\t"cnt[k]}' <result_file>
+```
 
-- dry-run steps are listed
-- `failed=0`
-
-Common failure signatures and quick fixes:
-
-- `missing_inputs` includes `assembly` -> add assembly string (for example `hg38`).
-- `missing_inputs` includes `ref-alt-or-variant-spec` -> provide explicit REF/ALT or equivalent variant spec.
-- `decision: clarify` with low confidence -> keep `--task variant-effect` and include explicit skill/model hint.
-- parsed `position` looks wrong -> prefer either `position=1_000_000` or `chr12:1000000` in the query.
-
-Accepted position formats for agent parsing:
-
-- `chrom=chr12 position=1_000_000 alt=G`
-- `chr12:1000000 alt=G`
+4. Inspect failed samples (if any).
+```bash
+awk -F'\t' 'NR==1{for(i=1;i<=NF;i++){if($i=="status")s=i; if($i=="error")e=i; if($i=="chrom")c=i; if($i=="position")p=i; if($i=="ref")r=i; if($i=="alt")a=i;} next} $s!="success"{print $c":"$p":"$r">"$a"\t"$e}' <result_file> | head -n 10
+```
 
 ## Clarify & Retry
 
-1. Check `missing_inputs` in the `run_agent.sh` output.
-2. Ask one focused follow-up per missing key, prioritizing `assembly` then coordinate and allele specification.
-3. Re-run `run_agent.sh` with the clarified inputs.
-4. Validate dry-run execution with `scripts/execute_plan.sh` before any real run.
+1. If `missing_inputs` is non-empty, clarify in this order: `assembly` -> `coordinate-or-interval` -> `ref-alt-or-variant-spec`.
+2. Re-run `run_agent.sh` and confirm `missing_inputs: []`.
+3. Re-run `execute_plan.sh --dry-run` before any heavy run.
+4. If network timeout occurs, retry once with proxy variables (or use VCF batch script default retry behavior).
 
 ## Related Playbooks
 

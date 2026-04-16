@@ -35,11 +35,11 @@ For the four core executable tasks, the output contract defines the expected sha
 
 | Field | Value |
 |---|---|
-| `assumptions` | coordinate-convention-must-be-explicit, ref-alt-interpretation-limited-to-selected-model |
-| `runnable_steps` | `bash scripts/run_agent.sh --task variant-effect --query {selected_skill}-variant-effect-workflow` |
-| `expected_outputs` | plan-json:variant-effect, variant-effect-summary.tsv, variant-effect-trackplot.png |
-| `fallbacks` | ask-for-missing-variant-spec |
-| `retry_policy` | clarify-then-single-retry |
+| `assumptions` | coordinate-convention-must-be-explicit, ref-alt-interpretation-limited-to-selected-model, vcf-pos-is-1based-passed-directly-to-genome-variant, indel-supported-snp-and-multibase-ref-alt, info-fields-collected-by-two-pass-and-transparently-output |
+| `runnable_steps` | `bash scripts/run_agent.sh --task variant-effect --query {selected_skill}-variant-effect-workflow`; `bash scripts/execute_plan.sh --task variant-effect --query {selected_skill}-variant-effect-workflow --dry-run`; `python skills/alphagenome-api/scripts/run_alphagenome_predict_variant.py --variant-spec <chr:pos:alt> --assembly hg38|hg19 --output-dir <dir>`; `python skills/alphagenome-api/scripts/run_alphagenome_vcf_batch.py --input <file.vcf> --assembly hg38|hg19 --output-dir <dir> --non-interactive` |
+| `expected_outputs` | plan-json:variant-effect, alphagenome_variant-effect_<chrom>_<position>_<ref>_to_<alt>_result.json, alphagenome_variant-effect_<chrom>_<position>_<ref>_to_<alt>_rnaseq_overlay.png, <vcf_stem>_tissues.tsv |
+| `fallbacks` | ask-for-missing-variant-spec, retry-with-network-proxy-once-if-client-create-times-out |
+| `retry_policy` | clarify-missing-inputs-then-connectivity-proxy-retry-once |
 
 ### embedding
 
