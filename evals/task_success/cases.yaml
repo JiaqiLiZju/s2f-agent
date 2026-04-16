@@ -60,12 +60,12 @@ cases:
     min_runnable_steps: 1
     min_expected_outputs: 2
   - id: task_success_011
-    query: "Use $nucleotide-transformer-v3 to run track prediction batch for case-study/track_prediction/bed/Test.interval.bed with species human and assembly hg38, save outputs to case-study/track_prediction/ntv3_results."
+    query: "Use $nucleotide-transformer-v3 to run track prediction for human hg38 interval chr19:6700000-6732768 and save outputs to output/ntv3_results."
     task: track-prediction
     min_runnable_steps: 1
-    min_expected_outputs: 4
-    required_step_contains: "run_ntv3_track_case.sh"
-    required_expected_output_contains: "ntv3_bed_batch_summary.json"
+    min_expected_outputs: 3
+    required_step_contains: "run_track_prediction.py"
+    required_expected_output_contains: "output/ntv3_results"
   - id: task_success_012
     query: "Use $nucleotide-transformer-v3 to run embedding for hg38 chr19:6700000-6702768 and save outputs under case-study/embedding/output."
     task: embedding
@@ -107,15 +107,15 @@ cases:
     min_runnable_steps: 1
     min_expected_outputs: 2
     required_selected_skill: "borzoi-workflows"
-    required_step_contains: "borzoi-workflows-variant-effect-workflow"
+    required_step_contains: "run_borzoi_predict.py"
   - id: task_success_018
-    query: "Use $alphagenome-api to run real track prediction batch on case-study-playbooks/track_prediction/bed/Test.interval.bed for human hg38 with output head RNA_SEQ and save to case-study-playbooks/track_prediction/alphagenome_results."
+    query: "Use $alphagenome-api to run real track prediction for human hg38 interval chr19:6700000-6732768 with output head RNA_SEQ and save outputs to output/alphagenome_track."
     task: track-prediction
     min_runnable_steps: 1
     min_expected_outputs: 4
     required_selected_skill: "alphagenome-api"
-    required_step_contains: "run_alphagenome_track_prediction_bed_batch.py --bed"
-    required_expected_output_contains: "alphagenome_track_bed_batch_summary.json"
+    required_step_contains: "run_alphagenome_track_prediction_bed_batch.py --interval"
+    required_expected_output_contains: "alphagenome_track_chr19_6700000_6732768_trackplot.png"
   - id: task_success_019
     query: "Use $alphagenome-api to run real track prediction for human hg38 interval chr19:6700000-6732768 with output head RNA_SEQ and save outputs to output/alphagenome_track."
     task: track-prediction
