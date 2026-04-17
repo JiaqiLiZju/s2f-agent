@@ -18,6 +18,11 @@ triggers:
   - bigwig
   - annotation
   - ntv3-finetuning
+  - ntv3-mode
+  - full-train
+  - training_history
+  - best_checkpoint
+  - train-command
 required_inputs:
   - species
   - sequence-or-interval
@@ -48,6 +53,7 @@ tools:
   - scripts/check_valid_length.py
   - scripts/run_track_prediction.py
   - scripts/run_track_prediction_bed_batch.py
+  - scripts/train_csv_binary_classification.py
 tool_contracts:
   - tool: scripts/check_valid_length.py
     inputs:
@@ -78,7 +84,21 @@ tool_contracts:
       - writes-output-artifacts
     failure_codes:
       - 1
+  - tool: scripts/train_csv_binary_classification.py
+    inputs:
+      - train-dev-test-csv-sequence-label
+      - context-length
+      - execution-device
+    outputs:
+      - eval-metrics-json
+      - training-history-json
+      - best-checkpoint-pt
+    side_effects:
+      - writes-output-artifacts
+    failure_codes:
+      - 1
 priority_rules:
   - prefer-when-user-explicitly-mentions-ntv3
   - prefer-when-task-needs-species-conditioned-track-prediction
   - prefer-for-fine-tuning-when-request-explicitly-targets-ntv3-bigwig-or-annotation-workflows
+  - prefer-for-fine-tuning-when-request-explicitly-targets-ntv3-full-training-or-ntv3-mode-train

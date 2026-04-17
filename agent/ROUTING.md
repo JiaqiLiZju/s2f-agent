@@ -91,8 +91,10 @@ Answer format:
 
 Fine-tuning disambiguation rule:
 
-- Prefer `dnabert2` for generic CSV/classification fine-tuning requests.
-- Prefer `nucleotide-transformer-v3` when the request explicitly targets NTv3 and/or bigwig or annotation heads with species-conditioned setup.
+- Treat `dnabert2` and `nucleotide-transformer-v3` as co-primary candidates.
+- If the request explicitly names one skill/model path, route to that skill.
+- If the request is generic CSV fine-tuning and evidence is close, emit `decision=clarify` and ask the user to choose `dnabert2` or `nucleotide-transformer-v3`.
+- For explicit NTv3 requests, keep fine-tuning mode explicit (`prep` vs `train`) in generated runnable steps and expected outputs.
 
 Variant-effect multi-skill composition rule:
 

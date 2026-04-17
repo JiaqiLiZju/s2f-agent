@@ -1,6 +1,6 @@
 # Fine-Tune Workflows
 
-Use this file when the user asks for NTv3 fine-tuning or notebook-to-script conversion.
+Use this file when the user asks for NTv3 fine-tuning, notebook-to-script conversion, or prep/train mode disambiguation.
 
 Primary evidence source for this reference:
 
@@ -10,8 +10,12 @@ Primary evidence source for this reference:
 
 ## Scope and Execution Mode
 
-- NTv3 fine-tuning in this repository is notebook-first.
-- Keep the boundary explicit: provide reproducible workflow guidance and command templates, but do not claim a packaged one-command training CLI exists in this repo.
+- Notebook workflows remain the model-behavior source of truth.
+- Reproducible local execution entrypoint for this repository is:
+  - `case-study-playbooks/fine-tuning/run_fine_tuning_case.sh`
+- NTv3 fine-tuning is mode-aware:
+  - `prep`: planning artifacts only (`train-command.sh`, placeholder metrics)
+  - `train`: full CSV binary-classification training (`eval-metrics.json`, `training_history.json`, `best_checkpoint.pt`)
 
 ## Shared Preflight Checklist
 
@@ -22,8 +26,9 @@ Primary evidence source for this reference:
    - divisor = `2 ** num_downsamples`
 4. Target cropping behavior is explicit:
    - `keep_target_center_fraction` affects bigwig/annotation heads.
-5. Hardware plan is explicit:
-   - device, dtype, batch size, accumulation steps.
+5. Hardware policy is explicit:
+   - this playbook supports CPU-only full training currently
+   - MPS is fail-fast and should be rejected early
 
 ## Workflow A: Pretrained -> BigWig Tracks
 
@@ -50,12 +55,6 @@ Typical training pattern:
 - optimize with Poisson-style track loss
 - report correlation metrics on validation/test sets
 
-Typical outputs to report:
-
-- training/validation metric logs
-- evaluation summary on held-out windows
-- best checkpoint path (or explicit not-executed status)
-
 ## Workflow B: Posttrained -> BigWig Tracks
 
 Notebook source: `03_fine_tuning_posttrained_model_biwig.ipynb`
@@ -80,12 +79,6 @@ Typical training pattern:
 - warmup + decay learning-rate schedule
 - track-wise correlation metrics for validation/test
 
-Typical outputs to report:
-
-- optimizer/scheduler config snapshot
-- train/val loss curves
-- checkpoint selection criterion and saved checkpoint path
-
 ## Workflow C: Pretrained -> Annotation Heads
 
 Notebook source: `04_fine_tuning_pretrained_model_annotation.ipynb`
@@ -107,48 +100,55 @@ Typical training pattern:
 - classification-style objective (for example focal-loss family)
 - per-label metrics tracking during train/val/test
 
-Typical outputs to report:
+## Mode-Aware Case Study Commands
 
-- per-label metric table
-- aggregate validation/test metrics
-- final checkpoint and inference-ready settings
+Prep mode:
 
-## Notebook-To-Script Guidance
+```bash
+bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh \
+  --skills ntv3 \
+  --ntv3-mode prep \
+  --data-dir case-study-playbooks/fine-tuning/data
+```
 
-When users ask to "convert to script" or "give training command":
+Train mode:
 
-1. Start from one notebook workflow only (A/B/C) to avoid mixed assumptions.
-2. Freeze and print all config keys first.
-3. Keep data, model, loss, metrics, optimizer, scheduler, and checkpoint IO as separate blocks.
-4. Emit explicit placeholders for user dataset paths and project-specific save directories.
-5. Label non-executed placeholders clearly instead of fabricating results.
+```bash
+FINE_TUNING_NTV3_DEVICE=cpu \
+bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh \
+  --skills ntv3 \
+  --ntv3-mode train \
+  --data-dir case-study-playbooks/fine-tuning/data
+```
 
-## Case-Study Prep Artifacts (case-study/ntv3)
+## Artifact Acceptance (Prep vs Train)
 
-When running `bash case-study/ntv3/run_ntv3_finetuning_prep.sh`, interpret outputs as planning artifacts:
+Prep mode artifacts under `<run_root>/ntv3_results`:
 
-- `fine_tuning_plan.json`: routed plan from `run_agent.sh` with `decision`, `primary_skill`, and planned runnable steps.
-- `train-command.sh`: notebook-to-script template entrypoint; this is a handoff scaffold, not proof of executed training.
-- `eval-metrics.json`: expected to contain `status=not_executed` for prep-only flow plus `selected_skill` and `planned_train_command`.
-- `prep_report.json`: links prep artifacts and records context-length planning details.
-- `validate_dataset.log` and `length_check.log`: dataset/schema and divisibility checkpoints.
+- `fine_tuning_plan.json`
+- `train-command.sh`
+- `eval-metrics.json` (`status=not_executed`)
+- `prep_report.json`
 
-Use these artifacts to decide whether the workflow is ready to move into notebook training.
+Train mode artifacts under `<run_root>/ntv3_results`:
 
-## Handoff: Prep -> Notebook Training
+- `eval-metrics.json` (`status=completed` expected on success)
+- `training_history.json`
+- `model_output/best_checkpoint.pt`
+- `train.log`
 
-1. Confirm prep passed: required artifact files exist and `fine_tuning_plan.json` has `decision=route`.
-2. Open the matching notebook family (`02_*`, `03_*`, or `04_*`) based on head type and pretrained/posttrained path.
-3. Copy resolved assumptions from prep into notebook config cells:
-   - model id, species, sequence/context length, divisor, dataset paths.
-4. Keep the prep-generated `train-command.sh` as an execution template and provenance note.
-5. Start training in notebook/runtime; replace prep placeholder metrics with real train/eval outputs.
+Flow-level summary:
 
-## Failure Recovery Paths (Prep Phase)
+- `<run_root>/fine_tuning_case_summary.json` must exist in both modes.
+- Treat artifact presence and mode-correct status fields as pass criteria.
+
+## Failure Recovery Paths
 
 1. Length invalid (`check_valid_length.py` fails):
-   - round context length to nearest valid multiple (`2 ** num_downsamples`) and rerun prep.
+   - round context length to nearest valid multiple (`2 ** num_downsamples`) and rerun.
 2. Dataset schema invalid (`validate_dataset.log` fails):
-   - repair headers/columns/types to match intended workflow (`sequence,label` for the current case-study prep) and rerun prep.
-3. Token missing or gated model auth failure (`HF_TOKEN` unavailable/unauthorized):
-   - export valid `HF_TOKEN` (or run `huggingface-cli login`), then rerun prep from the start.
+   - repair headers/columns/types to `sequence,label` and rerun.
+3. Token missing or gated model auth failure:
+   - export valid `HF_TOKEN` (or run `huggingface-cli login`) and rerun.
+4. Unsupported train device:
+   - if MPS/GPU mode is requested for this playbook, switch to CPU and rerun.

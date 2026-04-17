@@ -47,6 +47,56 @@ contains_token() {
   [[ "$haystack" == *"$needle"* ]]
 }
 
+query_mentions_dnabert2() {
+  local query_lc="$1"
+  contains_token "$query_lc" "\$dnabert2" || \
+    contains_token "$query_lc" "dnabert2" || \
+    contains_token "$query_lc" "zhihan1996/dnabert-2-117m"
+}
+
+query_mentions_ntv3() {
+  local query_lc="$1"
+  contains_token "$query_lc" "\$nucleotide-transformer-v3" || \
+    contains_token "$query_lc" "nucleotide-transformer-v3" || \
+    contains_token "$query_lc" "ntv3" || \
+    contains_token "$query_lc" "instadeepai/ntv3"
+}
+
+fine_tuning_query_has_explicit_skill_or_model() {
+  local query_lc="$1"
+  if query_mentions_dnabert2 "$query_lc"; then
+    return 0
+  fi
+  if query_mentions_ntv3 "$query_lc"; then
+    return 0
+  fi
+  return 1
+}
+
+fine_tuning_query_is_generic_csv_training() {
+  local query_lc="$1"
+  local has_training=0
+  local has_csv_schema=0
+
+  if contains_token "$query_lc" "fine-tun" || contains_token "$query_lc" "finetun" || contains_token "$query_lc" "training" || contains_token "$query_lc" "train" || contains_token "$query_lc" "训练"; then
+    has_training=1
+  fi
+  if contains_token "$query_lc" "csv" || contains_token "$query_lc" "sequence,label" || contains_token "$query_lc" "labels" || contains_token "$query_lc" "classification" || contains_token "$query_lc" "regression" || contains_token "$query_lc" "标签" || contains_token "$query_lc" "分类" || contains_token "$query_lc" "回归"; then
+    has_csv_schema=1
+  fi
+
+  [[ "$has_training" -eq 1 && "$has_csv_schema" -eq 1 ]]
+}
+
+abs_int() {
+  local value="${1:-0}"
+  if [[ "$value" =~ ^- ]]; then
+    printf '%s\n' "${value#-}"
+  else
+    printf '%s\n' "$value"
+  fi
+}
+
 in_csv_list() {
   local value="${1:-}"
   local csv="${2:-}"
@@ -690,8 +740,30 @@ if [[ -n "$effective_task" ]]; then
   fi
 fi
 
+fine_tuning_ambiguous=0
+if [[ "$effective_task" == "fine-tuning" ]]; then
+  if fine_tuning_query_is_generic_csv_training "$query_lc" && ! fine_tuning_query_has_explicit_skill_or_model "$query_lc"; then
+    dnabert2_score="$(score_skill_for_query "dnabert2" "$query_lc" "$effective_task")"
+    ntv3_score="$(score_skill_for_query "nucleotide-transformer-v3" "$query_lc" "$effective_task")"
+    if [[ -z "$dnabert2_score" ]]; then
+      dnabert2_score=0
+    fi
+    if [[ -z "$ntv3_score" ]]; then
+      ntv3_score=0
+    fi
+    score_gap="$(abs_int $((dnabert2_score - ntv3_score)))"
+    if [[ "$score_gap" -le 10 ]]; then
+      fine_tuning_ambiguous=1
+      clarify_question="I can route this fine-tuning request, but one choice decides the workflow: dnabert2 or nucleotide-transformer-v3 (ntv3)?"
+    fi
+  fi
+fi
+
 decision="route"
 if [[ -z "$primary_skill" ]]; then
+  decision="clarify"
+fi
+if [[ "$decision" == "route" && "$fine_tuning_ambiguous" -eq 1 ]]; then
   decision="clarify"
 fi
 if [[ "$decision" == "route" && "$task_source" != "provided" && "$CLARIFY_LOW_CONFIDENCE_BEHAVIOR" == "ask" && "$confidence_level" == "low" ]]; then

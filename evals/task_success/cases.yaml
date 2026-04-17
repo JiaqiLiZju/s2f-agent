@@ -1,5 +1,5 @@
 schema_version: 1
-updated_at: "2026-04-15"
+updated_at: "2026-04-17"
 cases:
   - id: task_success_001
     query: "Need variant-effect guidance for hg38 chr12 REF ALT with output summary."
@@ -12,7 +12,7 @@ cases:
     min_runnable_steps: 1
     min_expected_outputs: 1
   - id: task_success_003
-    query: "Need fine-tuning workflow for CSV labels and compute budget."
+    query: "Use $dnabert2 for binary classification fine-tuning with CSV labels and compute budget."
     task: fine-tuning
     min_runnable_steps: 1
     min_expected_outputs: 1
@@ -74,12 +74,12 @@ cases:
     required_step_contains: "case-study-playbooks/embedding/run_embedding_case.sh"
     required_expected_output_contains: "embedding_case_summary.json"
   - id: task_success_013
-    query: "Use $nucleotide-transformer-v3 for binary classification fine-tuning with dataset schema sequence,label and single 24GB GPU budget; output train-command.sh and eval-metrics.json."
+    query: "Use $nucleotide-transformer-v3 for full-train binary classification fine-tuning with dataset schema sequence,label and CPU constraints; require training_history.json and best_checkpoint.pt."
     task: fine-tuning
     min_runnable_steps: 1
-    min_expected_outputs: 2
-    required_step_contains: "nucleotide-transformer-v3-fine-tuning-workflow"
-    required_expected_output_contains: "train-command.sh"
+    min_expected_outputs: 4
+    required_step_contains: "--ntv3-mode train"
+    required_expected_output_contains: "training_history.json"
   - id: task_success_014
     query: "Run embedding multi-skill case-study with $dnabert2 $evo2-inference $nucleotide-transformer-v3 on case-study-playbooks/embedding/bed/Test.interval.bed with run_id 20260417T000000Z."
     task: embedding
@@ -88,12 +88,12 @@ cases:
     required_step_contains: "case-study-playbooks/embedding/run_embedding_case.sh"
     required_expected_output_contains: "logs/embedding_case_manifest.tsv"
   - id: task_success_015
-    query: "Use $nucleotide-transformer-v3 for fine-tuning prep case-study with dataset schema sequence,label in case-study/ntv3/data and single 24GB GPU budget; output to case-study/ntv3/output with train-command.sh and eval-metrics.json."
+    query: "Use $nucleotide-transformer-v3 for fine-tuning prep case-study with dataset schema sequence,label in case-study-playbooks/fine-tuning/data and CPU constraints; output train-command.sh and eval-metrics.json."
     task: fine-tuning
     min_runnable_steps: 1
-    min_expected_outputs: 2
-    required_step_contains: "nucleotide-transformer-v3-fine-tuning-workflow"
-    required_expected_output_contains: "eval-metrics.json"
+    min_expected_outputs: 3
+    required_step_contains: "--ntv3-mode prep"
+    required_expected_output_contains: "train-command.sh"
   - id: task_success_016
     query: "Use $borzoi-workflows to run track prediction for species human assembly hg38 interval chr19:6700000-6732768 with output head RNA and save outputs to case-study/track_prediction/borzoi_results."
     task: track-prediction

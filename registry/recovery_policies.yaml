@@ -1,5 +1,5 @@
 schema_version: 1
-updated_at: "2026-04-16"
+updated_at: "2026-04-17"
 policies:
   variant-effect:
     retry_policy: adaptive-window-fallback-with-timeout-proxy-retry
@@ -16,6 +16,7 @@ policies:
     retry_policy: clarify-dataset-schema-then-retry-once
     fallback_skills:
       - dnabert2
+      - nucleotide-transformer-v3
   track-prediction:
     retry_policy: clarify-interval-or-bed-then-per-interval-network-retry-once
     fallback_skills:

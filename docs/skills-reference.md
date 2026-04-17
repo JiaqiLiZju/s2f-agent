@@ -34,7 +34,7 @@ Dev skills require `--include-disabled` to participate in routing, linking, and 
 | `transformer-embedding-and-finetuning` | DNABERT-2 transformer for embeddings, GUE evaluation, and supervised fine-tuning from CSV. |
 | `genome-language-model-inference` | Evo 2 large genome language model. Supports local GPU and hosted NVCF API paths. |
 | `phylogenetic-language-models` | GPN family (GPN, PhyloGPN, GPN-Star) using multiple sequence alignments for variant scoring. |
-| `transformers-ntv3` | NTv3 species-conditioned transformer. Supports embedding, track prediction, and notebook-first fine-tuning workflows for bigwig/annotation objectives. |
+| `transformers-ntv3` | NTv3 species-conditioned transformer. Supports embedding, track prediction, and mode-aware fine-tuning workflows (`prep` planning + `train` full run) for bigwig/annotation/CSV objectives. |
 | `segmentation-heads` | SegmentNT family (SegmentNT, SegmentEnformer, SegmentBorzoi) for genomic element segmentation with rescaling constraints. |
 | `legacy-cnn-regulatory` | Classic Basset CNN (Torch7) for regulatory prediction and SAD analysis. Dev only. |
 | `profile-prediction-and-attribution` | BPNet profile prediction with SHAP-based attribution and motif integration. Dev only. |
@@ -43,8 +43,10 @@ Dev skills require `--include-disabled` to participate in routing, linking, and 
 
 ## Fine-Tuning Routing Notes
 
-- Default fine-tuning route for generic CSV classification/regression requests remains `dnabert2`.
-- Route to `nucleotide-transformer-v3` when the request explicitly targets NTv3 and/or species-conditioned `bigwig` / `annotation` workflows (including `case-study/ntv3` prep phrasing).
+- `dnabert2` and `nucleotide-transformer-v3` are co-primary fine-tuning candidates.
+- Explicit skill/model mentions take priority (`$dnabert2`, `$nucleotide-transformer-v3`, NTv3 model ids).
+- Generic CSV fine-tuning queries with close evidence now return `decision=clarify` to ask which path should lead.
+- Explicit NTv3 requests produce mode-aware plans (`prep` vs `train`) with mode-specific artifact expectations.
 
 ## Including Disabled Skills
 

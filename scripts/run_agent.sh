@@ -840,6 +840,96 @@ extract_segmentnt_track_output_dir_from_query() {
   printf '%s\n' "$out"
 }
 
+query_mentions_ntv3() {
+  local query_lc="$1"
+  contains_token "$query_lc" "\$nucleotide-transformer-v3" || \
+    contains_token "$query_lc" "nucleotide-transformer-v3" || \
+    contains_token "$query_lc" "ntv3" || \
+    contains_token "$query_lc" "instadeepai/ntv3"
+}
+
+extract_fine_tuning_mode_from_query() {
+  local query_lc="$1"
+
+  if contains_token "$query_lc" "--ntv3-mode train" || \
+    contains_token "$query_lc" "full-train" || \
+    contains_token "$query_lc" "full train" || \
+    contains_token "$query_lc" "full training" || \
+    contains_token "$query_lc" "complete training" || \
+    contains_token "$query_lc" "end-to-end training" || \
+    contains_token "$query_lc" "training_history" || \
+    contains_token "$query_lc" "best_checkpoint" || \
+    contains_token "$query_lc" "model_output" || \
+    contains_token "$query_lc" "完整训练" || \
+    contains_token "$query_lc" "全量训练"; then
+    printf 'train\n'
+    return 0
+  fi
+
+  if contains_token "$query_lc" "--ntv3-mode prep" || \
+    contains_token "$query_lc" "prep" || \
+    contains_token "$query_lc" "prep-only" || \
+    contains_token "$query_lc" "plan only" || \
+    contains_token "$query_lc" "planning only" || \
+    contains_token "$query_lc" "not_executed" || \
+    contains_token "$query_lc" "train-command.sh" || \
+    contains_token "$query_lc" "planned_train_command" || \
+    contains_token "$query_lc" "预处理" || \
+    contains_token "$query_lc" "准备阶段"; then
+    printf 'prep\n'
+    return 0
+  fi
+
+  printf '\n'
+}
+
+extract_fine_tuning_run_id_from_query() {
+  local query_raw="$1"
+  local run_id=""
+  run_id="$(printf '%s\n' "$query_raw" | grep -Eo '[0-9]{8}T[0-9]{6}Z' | head -n 1 || true)"
+  printf '%s\n' "$run_id"
+}
+
+compute_fine_tuning_run_id() {
+  local query_raw="$1"
+  local run_id=""
+  run_id="$(extract_fine_tuning_run_id_from_query "$query_raw")"
+  if [[ -z "$run_id" ]]; then
+    run_id="$(date -u +%Y%m%dT%H%M%SZ)"
+  fi
+  printf '%s\n' "$run_id"
+}
+
+extract_fine_tuning_data_dir_from_query() {
+  local query_raw="$1"
+  local out=""
+  local csv_path=""
+
+  out="$(printf '%s\n' "$query_raw" | grep -Eio 'case-study-playbooks/fine-tuning/[A-Za-z0-9._/-]*data' | head -n 1 || true)"
+  if [[ -z "$out" ]]; then
+    out="$(printf '%s\n' "$query_raw" | grep -Eio 'case-study/[A-Za-z0-9._/-]*data' | head -n 1 || true)"
+  fi
+  if [[ -z "$out" ]]; then
+    csv_path="$(printf '%s\n' "$query_raw" | grep -Eo '[/A-Za-z0-9._~-]+train\.csv' | head -n 1 || true)"
+    if [[ -n "$csv_path" ]]; then
+      out="${csv_path%/train.csv}"
+    fi
+  fi
+  if [[ -z "$out" ]]; then
+    out="case-study-playbooks/fine-tuning/data"
+  fi
+
+  out="$(printf '%s\n' "$out" | sed -E "s/^[\"'()]+//; s/[\"'(),;:.。；，]+$//")"
+  out="${out%/.}"
+  out="${out%/}"
+  printf '%s\n' "$out"
+}
+
+compute_fine_tuning_output_root() {
+  local run_id="$1"
+  printf 'case-study-playbooks/fine-tuning/%s\n' "$run_id"
+}
+
 csv_count() {
   local csv="${1:-}"
   local count=0
@@ -1707,6 +1797,22 @@ if [[ "$effective_task" == "variant-effect" ]]; then
   variant_assembly="$(extract_variant_assembly_from_query "$query_lc")"
 fi
 
+fine_tuning_mode=""
+fine_tuning_run_id=""
+fine_tuning_data_dir=""
+fine_tuning_output_root=""
+fine_tuning_ntv3_explicit=0
+
+if [[ "$effective_task" == "fine-tuning" ]]; then
+  fine_tuning_mode="$(extract_fine_tuning_mode_from_query "$query_lc")"
+  fine_tuning_run_id="$(compute_fine_tuning_run_id "$query")"
+  fine_tuning_data_dir="$(extract_fine_tuning_data_dir_from_query "$query")"
+  fine_tuning_output_root="$(compute_fine_tuning_output_root "$fine_tuning_run_id")"
+  if query_mentions_ntv3 "$query_lc"; then
+    fine_tuning_ntv3_explicit=1
+  fi
+fi
+
 provided_csv=""
 missing_csv=""
 provided_canonical_csv=""
@@ -1789,6 +1895,55 @@ fi
 
 if [[ -z "$plan_assumptions_csv" ]]; then
   plan_assumptions_csv="follow-task-contract-and-skill-constraints"
+fi
+
+if [[ "$effective_task" == "fine-tuning" && "$primary_skill" == "nucleotide-transformer-v3" && "$fine_tuning_ntv3_explicit" -eq 1 && -n "$fine_tuning_mode" ]]; then
+  ntv3_ft_run_root="$fine_tuning_output_root"
+  ntv3_ft_output_dir="${ntv3_ft_run_root}/ntv3_results"
+  ntv3_ft_common_cmd="bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh --run-id ${fine_tuning_run_id} --skills ntv3 --data-dir ${fine_tuning_data_dir} --continue-on-error 1"
+
+  if [[ "$fine_tuning_mode" == "train" ]]; then
+    plan_steps_csv="FINE_TUNING_NTV3_DEVICE=cpu ${ntv3_ft_common_cmd} --ntv3-mode train"
+  else
+    plan_steps_csv="${ntv3_ft_common_cmd} --ntv3-mode prep"
+  fi
+
+  plan_expected_outputs_csv=""
+  plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "plan-json:fine-tuning")"
+  plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_ft_run_root}/fine_tuning_case_summary.json")"
+  if [[ "$fine_tuning_mode" == "train" ]]; then
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_ft_output_dir}/eval-metrics.json")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_ft_output_dir}/training_history.json")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_ft_output_dir}/model_output/best_checkpoint.pt")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_ft_output_dir}/train.log")"
+  else
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_ft_output_dir}/train-command.sh")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_ft_output_dir}/eval-metrics.json")"
+    plan_expected_outputs_csv="$(append_csv "$plan_expected_outputs_csv" "expected-file:${ntv3_ft_output_dir}/prep_report.json")"
+  fi
+
+  plan_fallbacks_csv=""
+  if [[ "$fine_tuning_mode" == "train" ]]; then
+    plan_fallbacks_csv="$(append_csv "$plan_fallbacks_csv" "fallback-to-ntv3-prep-mode")"
+    plan_fallbacks_csv="$(append_csv "$plan_fallbacks_csv" "${ntv3_ft_common_cmd} --ntv3-mode prep")"
+  fi
+  plan_fallbacks_csv="$(append_csv "$plan_fallbacks_csv" "fallback-to-dnabert2-csv-path")"
+  plan_fallbacks_csv="$(append_csv "$plan_fallbacks_csv" "clarify-dataset-schema-and-retry")"
+
+  plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "ntv3-fine-tuning-fastpath-enabled")"
+  plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "ntv3-fine-tuning-mode:${fine_tuning_mode}")"
+  plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "fine-tuning-run-id:${fine_tuning_run_id}")"
+  plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "fine-tuning-run-root:${ntv3_ft_run_root}")"
+  plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "fine-tuning-data-dir:${fine_tuning_data_dir}")"
+  plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "case-study-playbooks-fine-tuning-entrypoint:run_fine_tuning_case.sh")"
+  if [[ "$fine_tuning_mode" == "train" ]]; then
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "ntv3-train-cpu-only-in-current-playbook")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "ntv3-train-mps-fail-fast")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "ntv3-train-requires-hf-token")"
+  else
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "ntv3-prep-outputs-are-planning-artifacts")"
+    plan_assumptions_csv="$(append_csv "$plan_assumptions_csv" "ntv3-prep-eval-metrics-status-not_executed")"
+  fi
 fi
 
 if [[ "$effective_task" == "track-prediction" && "$primary_skill" == "nucleotide-transformer-v3" ]]; then

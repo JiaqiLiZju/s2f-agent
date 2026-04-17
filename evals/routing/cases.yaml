@@ -1,5 +1,5 @@
 schema_version: 1
-updated_at: "2026-04-15"
+updated_at: "2026-04-17"
 cases:
   - id: route_001
     query: "Use $dnabert2 to validate my train/dev/test CSV and suggest model_max_length."
@@ -55,7 +55,7 @@ cases:
   - id: route_011
     query: "Train a model on fasta labels."
     expected_decision: clarify
-    expected_clarify_contains: "which skill should lead"
+    expected_clarify_contains: "dnabert2 or nucleotide-transformer-v3"
   - id: route_012
     query: "Hello, can you help?"
     expected_decision: clarify
@@ -102,7 +102,18 @@ cases:
     expected_secondary_skills: []
     task: embedding
   - id: route_021
-    query: "Use $nucleotide-transformer-v3 for fine-tuning prep case-study with dataset schema sequence,label in case-study/ntv3/data and single 24GB GPU budget; output to case-study/ntv3/output with train-command.sh and eval-metrics.json."
+    query: "Use $nucleotide-transformer-v3 for fine-tuning prep case-study with dataset schema sequence,label in case-study-playbooks/fine-tuning/data and CPU constraints; output train-command.sh and eval-metrics.json."
+    expected_primary_skill: nucleotide-transformer-v3
+    expected_secondary_skills:
+      - dnabert2
+    task: fine-tuning
+  - id: route_022
+    query: "Need fine-tuning workflow for CSV labels and compute budget."
+    expected_decision: clarify
+    expected_clarify_contains: "dnabert2 or nucleotide-transformer-v3"
+    task: fine-tuning
+  - id: route_023
+    query: "Use $nucleotide-transformer-v3 for full-train CSV binary classification fine-tuning with dataset schema sequence,label and CPU constraints; require training_history.json and best_checkpoint.pt."
     expected_primary_skill: nucleotide-transformer-v3
     expected_secondary_skills:
       - dnabert2

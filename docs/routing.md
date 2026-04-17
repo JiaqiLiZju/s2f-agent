@@ -93,9 +93,10 @@ Variant-effect planner behavior (run_agent fastpath):
 
 Fine-tuning disambiguation:
 
-- Prefer `dnabert2` for generic CSV/classification fine-tuning requests.
-- Prefer `nucleotide-transformer-v3` when the query explicitly mentions NTv3 and/or `bigwig` / `annotation` species-conditioned objectives.
-- For NTv3 case-study prep wording (for example `case-study/ntv3` + `train-command.sh` / `eval-metrics.json`), keep `nucleotide-transformer-v3` as primary and `dnabert2` as fallback secondary.
+- Treat `dnabert2` and `nucleotide-transformer-v3` as co-primary candidates.
+- If the query explicitly mentions one skill/model path, route to that skill.
+- If the query is generic CSV fine-tuning and the two scores are close, emit `decision=clarify` and ask the user to choose `dnabert2` vs `nucleotide-transformer-v3`.
+- For explicit NTv3 fine-tuning, `run_agent.sh` emits mode-aware plans (`--ntv3-mode prep` or `--ntv3-mode train`) with mode-specific expected outputs.
 
 ## The 5-Step Routing Algorithm
 
@@ -110,13 +111,15 @@ Fine-tuning disambiguation:
 `decision=clarify` fires when:
 - overall confidence is low (primary score < 35 or margin < 10), **and**
 - the user did not provide an explicit `--task` hint
+- fine-tuning is generic CSV training, no explicit skill/model is named, and `dnabert2` vs `nucleotide-transformer-v3` scores are close
 
 The clarify response includes:
 - `decision: clarify`
 - `confidence: low`
 - `clarify_question`: a single focused follow-up
 
-To bypass clarify, supply `--task <task>` explicitly:
+To bypass low-confidence clarify, supply `--task <task>` explicitly.  
+For fine-tuning ambiguity clarify, specify the skill path explicitly (`$dnabert2` or `$nucleotide-transformer-v3`):
 
 ```bash
 bash scripts/route_query.sh \

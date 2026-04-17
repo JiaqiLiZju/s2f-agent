@@ -1,5 +1,5 @@
 schema_version: 1
-updated_at: "2026-04-15"
+updated_at: "2026-04-17"
 cases:
   - id: grounded_001
     query: "Help me run AlphaGenome predict_variant on hg38 with REF ALT."
@@ -20,7 +20,7 @@ cases:
     required_constraint_contains: transformers
     forbidden_substring: invented_cli_flag
   - id: grounded_004
-    query: "Prepare fine-tuning plan from CSV labels with compute constraints."
+    query: "Use $dnabert2 to prepare a fine-tuning plan from CSV labels with compute constraints."
     task: fine-tuning
     expected_primary_skill: dnabert2
     required_constraint_contains: transformers
@@ -38,8 +38,14 @@ cases:
     required_constraint_contains: input-length-must-follow-divisibility-rules
     forbidden_substring: invented_ntv3_embedding_cli
   - id: grounded_007
-    query: "Use $nucleotide-transformer-v3 for fine-tuning prep case-study with dataset schema sequence,label in case-study/ntv3/data and single 24GB GPU budget; output to case-study/ntv3/output with train-command.sh and eval-metrics.json."
+    query: "Use $nucleotide-transformer-v3 for fine-tuning prep case-study with dataset schema sequence,label in case-study-playbooks/fine-tuning/data and CPU constraints; output train-command.sh and eval-metrics.json."
     task: fine-tuning
     expected_primary_skill: nucleotide-transformer-v3
     required_constraint_contains: input-length-must-follow-divisibility-rules
     forbidden_substring: invented_ntv3_training_entrypoint
+  - id: grounded_008
+    query: "Use $nucleotide-transformer-v3 for full-train binary classification fine-tuning with dataset schema sequence,label and CPU constraints; require training_history.json and best_checkpoint.pt."
+    task: fine-tuning
+    expected_primary_skill: nucleotide-transformer-v3
+    required_constraint_contains: input-length-must-follow-divisibility-rules
+    forbidden_substring: ntv3-prep-outputs-are-planning-artifacts

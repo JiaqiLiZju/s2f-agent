@@ -75,7 +75,7 @@ First run after bootstrap:
 | Variant-effect analysis | Compare REF vs ALT impact or prioritize variants | `alphagenome-api`, `borzoi-workflows`, `gpn-models`, `evo2-inference` | [`variant-effect`](./playbooks/variant-effect/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
 | Embedding and representation | Produce sequence embeddings for downstream analyses | `dnabert2`, `nucleotide-transformer-v3`, `nucleotide-transformer`, `evo2-inference` | [`embedding`](./playbooks/embedding/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
 | Track prediction workflows | Run sequence-to-signal prediction with model-appropriate constraints | `alphagenome-api`, `nucleotide-transformer-v3`, `borzoi-workflows`, `segment-nt` | [`track-prediction`](./playbooks/track-prediction/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
-| Fine-tuning and training setup | Prepare schemas, training configs, and model-specific run paths | `dnabert2`, `bpnet`, `basset-workflows` | [`fine-tuning`](./playbooks/fine-tuning/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
+| Fine-tuning and training setup | Prepare schemas, training configs, and model-specific run paths | `dnabert2`, `nucleotide-transformer-v3`, `bpnet`, `basset-workflows` | [`fine-tuning`](./playbooks/fine-tuning/README.md) | [`contracts`](./docs/contracts.md), [`input-schema`](./docs/input-schema.md) |
 | Environment bring-up and migration | Build reproducible stacks and verify operational readiness | `skill-factory` plus stack-specific skills | [`environment-setup`](./playbooks/environment-setup/README.md) | [`scripts-reference`](./docs/scripts-reference.md), [`architecture`](./docs/architecture.md) |
 
 ## Skill Catalog
@@ -98,7 +98,7 @@ Status definition:
 | `evo2-inference` | Stable | `skills/evo2-inference` | Evo 2 setup, checkpoint choice, inference, deployment | `$evo2-inference` | [`SKILL.md`](./skills/evo2-inference/SKILL.md) · [`references/`](./skills/evo2-inference/references/) |
 | `gpn-models` | Stable | `skills/gpn-models` | GPN-family framework selection and usage | `$gpn-models` | [`SKILL.md`](./skills/gpn-models/SKILL.md) · [`references/`](./skills/gpn-models/references/) |
 | `nucleotide-transformer` | Dev | `skills-dev/nucleotide-transformer` | Classic NT v1/v2 JAX inference, tokenization, embeddings | `$nucleotide-transformer` | [`SKILL.md`](./skills-dev/nucleotide-transformer/SKILL.md) · [`references/`](./skills-dev/nucleotide-transformer/references/) |
-| `nucleotide-transformer-v3` | Stable | `skills/nucleotide-transformer-v3` | NTv3 inference, species conditioning, length-aware runs | `$nucleotide-transformer-v3` | [`SKILL.md`](./skills/nucleotide-transformer-v3/SKILL.md) · [`references/`](./skills/nucleotide-transformer-v3/references/) |
+| `nucleotide-transformer-v3` | Stable | `skills/nucleotide-transformer-v3` | NTv3 inference, species conditioning, mode-aware fine-tuning (`prep`/`train`) | `$nucleotide-transformer-v3` | [`SKILL.md`](./skills/nucleotide-transformer-v3/SKILL.md) · [`references/`](./skills/nucleotide-transformer-v3/references/) |
 | `segment-nt` | Stable | `skills/segment-nt` | SegmentNT-family segmentation inference and scaling logic | `$segment-nt` | [`SKILL.md`](./skills/segment-nt/SKILL.md) · [`references/`](./skills/segment-nt/references/) |
 | `skill-factory` | Stable | `skills/skill-factory` | Scaffold and validate consistent skill packages from specs | `$skill-factory` | [`SKILL.md`](./skills/skill-factory/SKILL.md) · [`references/`](./skills/skill-factory/references/) |
 
@@ -441,5 +441,3 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to add skills, run validation, 
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=JiaqiLiZju/s2f-agent&type=Date)](https://star-history.com/#JiaqiLiZju/s2f-agent&Date)
-ENDOFFILE",
-  "description": "Append remaining README content

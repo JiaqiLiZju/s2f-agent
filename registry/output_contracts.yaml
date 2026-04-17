@@ -69,14 +69,23 @@ contracts:
     assumptions:
       - dataset-schema-must-be-validated-before-training
       - evaluation-artifacts-path-must-be-defined
+      - fine-tuning-mode-must-be-explicit-for-ntv3-prep-vs-train
     runnable_steps:
       - bash scripts/run_agent.sh --task fine-tuning --query {selected_skill}-fine-tuning-workflow
+      - "# NTv3 prep mode: bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh --skills ntv3 --ntv3-mode prep --data-dir case-study-playbooks/fine-tuning/data"
+      - "# NTv3 train mode: FINE_TUNING_NTV3_DEVICE=cpu bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh --skills ntv3 --ntv3-mode train --data-dir case-study-playbooks/fine-tuning/data"
       - awk 'NR<=120{print}' playbooks/fine-tuning/README.md
     expected_outputs:
       - plan-json:fine-tuning
-      - expected-file:train-command.sh
-      - expected-file:eval-metrics.json
+      - prep:expected-file:train-command.sh
+      - prep:expected-file:eval-metrics.json
+      - train:expected-file:eval-metrics.json
+      - train:expected-file:training_history.json
+      - train:expected-file:model_output/best_checkpoint.pt
+      - train:expected-file:train.log
     fallbacks:
+      - clarify-ntv3-mode-then-retry
+      - fallback-to-dnabert2-csv-path
       - reduce-scope-to-minimal-train-run
     retry_policy: clarify-then-single-retry
   track-prediction:

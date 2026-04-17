@@ -55,10 +55,10 @@ For the four core executable tasks, the output contract defines the expected sha
 
 | Field | Value |
 |---|---|
-| `assumptions` | dataset-schema-must-be-validated-before-training, evaluation-artifacts-path-must-be-defined |
-| `runnable_steps` | `bash scripts/run_agent.sh --task fine-tuning --query {selected_skill}-fine-tuning-workflow` |
-| `expected_outputs` | plan-json:fine-tuning, train-command.sh, eval-metrics.json |
-| `fallbacks` | reduce-scope-to-minimal-train-run |
+| `assumptions` | dataset-schema-must-be-validated-before-training, evaluation-artifacts-path-must-be-defined, fine-tuning-mode-must-be-explicit-for-ntv3-prep-vs-train |
+| `runnable_steps` | `bash scripts/run_agent.sh --task fine-tuning --query {selected_skill}-fine-tuning-workflow`; NTv3 prep: `bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh --skills ntv3 --ntv3-mode prep ...`; NTv3 train: `FINE_TUNING_NTV3_DEVICE=cpu bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh --skills ntv3 --ntv3-mode train ...` |
+| `expected_outputs` | plan-json:fine-tuning, prep mode: `train-command.sh` + `eval-metrics.json`; train mode: `eval-metrics.json` + `training_history.json` + `model_output/best_checkpoint.pt` (+ train log) |
+| `fallbacks` | clarify-ntv3-mode-then-retry, fallback-to-dnabert2-csv-path, reduce-scope-to-minimal-train-run |
 | `retry_policy` | clarify-then-single-retry |
 
 ### track-prediction
@@ -81,7 +81,7 @@ When a plan step fails, the recovery policy defines the retry strategy and order
 |---|---|---|
 | `variant-effect` | adaptive-window-fallback-with-timeout-proxy-retry | borzoi-workflows, gpn-models, evo2-inference |
 | `embedding` | clarify-embedding-target-then-retry-once | nucleotide-transformer-v3, evo2-inference |
-| `fine-tuning` | clarify-dataset-schema-then-retry-once | dnabert2 |
+| `fine-tuning` | clarify-dataset-schema-then-retry-once | dnabert2, nucleotide-transformer-v3 |
 | `track-prediction` | clarify-interval-or-bed-then-per-interval-network-retry-once | alphagenome-api, nucleotide-transformer-v3, borzoi-workflows, segment-nt |
 
 Source: `registry/recovery_policies.yaml`

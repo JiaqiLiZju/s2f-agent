@@ -8,7 +8,7 @@ Provide a contract-aligned orchestration pattern for fine-tuning requests.
 
 - The user asks for training setup and command planning.
 - The user needs dataset contract checks before training.
-- The user wants compute-aware routing and fallback choices.
+- The user wants mode-aware NTv3 prep vs full training execution.
 
 ## Required Inputs (Canonical Keys)
 
@@ -27,10 +27,11 @@ Optional context that improves execution quality:
 
 ## Skill Selection Heuristics
 
-1. Prefer `dnabert2` for CSV-oriented genomics fine-tuning workflows (classification/regression labels).
-2. Prefer `nucleotide-transformer-v3` when the request explicitly targets NTv3 or species-conditioned `bigwig` / `annotation` fine-tuning workflows.
-3. Prefer `bpnet` for profile-prediction-focused training stacks.
-4. Prefer `basset-workflows` only when legacy Torch7 compatibility is required.
+1. `dnabert2` and `nucleotide-transformer-v3` are co-primary candidates for fine-tuning.
+2. If the query explicitly mentions one skill/model path, route to that skill.
+3. If the query is generic CSV fine-tuning and evidence is close, return `decision=clarify` and ask the user to choose `dnabert2` or `nucleotide-transformer-v3`.
+4. `bpnet` remains preferred for profile-prediction-focused training stacks.
+5. `basset-workflows` remains legacy-only.
 
 ## Runbook (Minimal Reproducible Commands)
 
@@ -48,7 +49,7 @@ JSON output:
 ```bash
 bash scripts/run_agent.sh \
   --task fine-tuning \
-  --query 'Use $dnabert2 for binary classification fine-tuning with CSV labels and compute budget' \
+  --query 'Use $nucleotide-transformer-v3 for fine-tuning prep with dataset schema sequence,label and CPU constraints' \
   --format json
 ```
 
@@ -57,29 +58,31 @@ Dry-run execution validation:
 ```bash
 bash scripts/execute_plan.sh \
   --task fine-tuning \
-  --query 'Use $dnabert2 for binary classification fine-tuning with CSV labels and compute budget' \
+  --query 'Use $nucleotide-transformer-v3 for full-train fine-tuning with dataset schema sequence,label and CPU constraints; require training_history.json and best_checkpoint.pt' \
   --format text
 ```
 
-NTv3 notebook-first planning route:
+## NTv3 Dual-Mode (Prep / Train)
+
+Execution entrypoint is under `case-study-playbooks/fine-tuning`.
+
+Prep mode (planning artifacts only):
 
 ```bash
-bash scripts/run_agent.sh \
-  --task fine-tuning \
-  --query 'Use $nucleotide-transformer-v3 for species-conditioned bigwig fine-tuning with compute constraints' \
-  --format json
+bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh \
+  --skills ntv3 \
+  --ntv3-mode prep \
+  --data-dir case-study-playbooks/fine-tuning/data
 ```
 
-NTv3 case-study prep route:
+Train mode (full training):
 
 ```bash
-bash case-study/ntv3/run_ntv3_finetuning_prep.sh
-```
-
-NTv3 combined case-study route:
-
-```bash
-bash case-study/ntv3/run_ntv3_case_study.sh
+FINE_TUNING_NTV3_DEVICE=cpu \
+bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh \
+  --skills ntv3 \
+  --ntv3-mode train \
+  --data-dir case-study-playbooks/fine-tuning/data
 ```
 
 ## Learn (Step-by-step + checkpoints + common failures)
@@ -89,62 +92,51 @@ Step 1: build a fine-tuning plan.
 ```bash
 bash scripts/run_agent.sh \
   --task fine-tuning \
-  --query 'Use $dnabert2 for binary classification with CSV schema and limited GPU budget' \
-  --format text
+  --query 'Use $nucleotide-transformer-v3 for full-train fine-tuning with dataset schema sequence,label and CPU constraints' \
+  --format json
 ```
 
 Expected checkpoint:
 
 - `decision: route` or focused `clarify`
 - `required_inputs` includes `task-objective`, `dataset-schema`, `compute-constraints`
+- NTv3 full-train plan step includes `--ntv3-mode train`
 
-Step 2: review structured plan fields.
+Step 2: verify mode-specific expected outputs.
 
-```bash
-bash scripts/run_agent.sh \
-  --task fine-tuning \
-  --query 'Use $dnabert2 for binary classification with CSV schema and limited GPU budget' \
-  --format json
-```
+Prep acceptance:
 
-Expected checkpoint:
+- `train-command.sh`
+- `eval-metrics.json`
 
-- `plan.runnable_steps` exists
-- `plan.expected_outputs` includes train/eval artifact hints
+Train acceptance:
+
+- `eval-metrics.json`
+- `training_history.json`
+- `model_output/best_checkpoint.pt`
 
 Step 3: validate dry-run execution path.
 
 ```bash
 bash scripts/execute_plan.sh \
   --task fine-tuning \
-  --query 'Use $dnabert2 for binary classification with CSV schema and limited GPU budget' \
+  --query 'Use $nucleotide-transformer-v3 for fine-tuning prep with dataset schema sequence,label and CPU constraints' \
   --format text
 ```
-
-Expected checkpoint:
-
-- summary indicates dry-run with no failures
 
 Common failure signatures and quick fixes:
 
 - `missing_inputs` includes `dataset-schema` -> state required columns and split assumptions.
-- `missing_inputs` includes `compute-constraints` -> specify GPU/CPU and budget limits.
-- low-confidence `clarify` decision -> keep explicit task plus skill hint in the query.
-- wrong skill selected for NTv3 bigwig/annotation objectives -> make `bigwig` / `annotation` / `species-conditioned` explicit and include `$nucleotide-transformer-v3`.
-
-NTv3 case-study flow checkpoints:
-
-- prep artifacts exist: `fine_tuning_plan.json`, `train-command.sh`, `eval-metrics.json`, `prep_report.json`
-- `fine_tuning_plan.json` includes `decision=route` and `primary_skill=nucleotide-transformer-v3`
-- `eval-metrics.json` includes `status=not_executed` and `planned_train_command`
-- validate process and artifact types; do not treat one run's tensor shape numbers as contract checks
+- `missing_inputs` includes `compute-constraints` -> specify CPU/GPU budget and memory limits.
+- `decision=clarify` for generic CSV request -> choose `dnabert2` or `nucleotide-transformer-v3` explicitly.
+- NTv3 train on MPS -> switch to CPU (`FINE_TUNING_NTV3_DEVICE=cpu`); MPS is fail-fast in this flow.
 
 ## Clarify & Retry
 
 1. Read `missing_inputs` for any missing required key.
 2. Clarify `task-objective`, `dataset-schema`, and `compute-constraints` explicitly.
-3. Re-run with a concrete training objective and schema details.
-4. Validate plan readiness before running any training commands.
+3. For NTv3, clarify `prep` vs `train` mode explicitly.
+4. Re-run with concrete mode and schema details.
 
 ## Related Playbooks
 

@@ -1,6 +1,6 @@
 ---
 name: nucleotide-transformer-v3
-description: Use Nucleotide Transformer v3 for long-context multispecies workflows with Hugging Face Transformers as the primary path, with JAX helper APIs as secondary compatibility, including pre-trained MLM embeddings, post-trained species-conditioned track/annotation inference, notebook-first fine-tuning workflows, length-divisibility checks, and gated-repo troubleshooting. Use when Codex needs to write, fix, explain, or review code or notebooks involving `AutoTokenizer.from_pretrained(..., trust_remote_code=True)`, `AutoModelForMaskedLM`, `AutoModel`, `encode_species`, `num_downsamples`, `keep_target_center_fraction`, NTv3 model names, bigwig/bed outputs, NTv3 fine-tuning notebooks, or NTv3 install/auth issues.
+description: Use Nucleotide Transformer v3 for long-context multispecies workflows with Hugging Face Transformers as the primary path, with JAX helper APIs as secondary compatibility, including pre-trained MLM embeddings, post-trained species-conditioned track/annotation inference, dual-mode fine-tuning workflows (prep + full training), length-divisibility checks, and gated-repo troubleshooting. Use when Codex needs to write, fix, explain, or review code or notebooks involving `AutoTokenizer.from_pretrained(..., trust_remote_code=True)`, `AutoModelForMaskedLM`, `AutoModel`, `encode_species`, `num_downsamples`, `keep_target_center_fraction`, NTv3 model names, bigwig/bed outputs, NTv3 fine-tuning notebooks, or NTv3 install/auth issues.
 ---
 
 # Nucleotide Transformer v3
@@ -25,7 +25,7 @@ Use this skill for NTv3 only.
 3. Choose the NTv3 workflow family.
 - Use pre-trained models for embeddings and masked-language-model style outputs.
 - Use post-trained models for species-conditioned functional-track and genome-annotation prediction.
-- Use notebook-first training workflows for NTv3 fine-tuning on bigwig/annotation tasks.
+- Use dual-mode training workflows for NTv3 fine-tuning (`prep` planning mode or `train` full-training mode) and keep mode explicit.
 
 4. Choose a model size or checkpoint family.
 - Use the main production checkpoints first.
@@ -53,7 +53,8 @@ Use this skill for NTv3 only.
 8. Pick execution format by task.
 - For region-level track prediction + plotting, prefer [scripts/run_track_prediction.py](scripts/run_track_prediction.py) instead of rewriting notebook cells.
 - For BED batch workflows, use [scripts/run_track_prediction_bed_batch.py](scripts/run_track_prediction_bed_batch.py).
-- For fine-tuning requests, use notebook-first guidance from [references/finetune-workflows.md](references/finetune-workflows.md) and keep assumptions explicit (data schema, heads, length/divisor, hardware).
+- For fine-tuning requests, use mode-aware guidance from [references/finetune-workflows.md](references/finetune-workflows.md), plus `case-study-playbooks/fine-tuning/run_fine_tuning_case.sh` for reproducible prep/train execution.
+- For NTv3 full training, use [scripts/train_csv_binary_classification.py](scripts/train_csv_binary_classification.py) via the case-study wrapper; keep CPU-only and MPS fail-fast constraints explicit.
 
 ## Real Track Prediction Fastpath
 
@@ -130,61 +131,71 @@ Acceptance checklist:
 - `*_result.json` exists with expected `species/assembly/chrom/start/end`.
 - BED mode writes `ntv3_bed_batch_summary.json` with per-interval success/failure details.
 
-## Notebook-First Fine-Tuning Fastpath
+## Mode-Aware Fine-Tuning Fastpath
 
-Use this path when the user asks for NTv3 fine-tuning or wants to reproduce NTv3 training tutorials.
+Use this path when the user asks for NTv3 fine-tuning and wants explicit prep/train mode behavior.
 
-- Primary source notebooks: `Readme/NTv3/02_fine_tuning_pretrained_model_biwig.ipynb`, `03_fine_tuning_posttrained_model_biwig.ipynb`, `04_fine_tuning_pretrained_model_annotation.ipynb`.
-- Keep this scope explicit: this repo currently ships notebook workflows and planning guidance, not a unified one-command NTv3 training CLI script.
+- Primary source notebooks remain: `Readme/NTv3/02_fine_tuning_pretrained_model_biwig.ipynb`, `03_fine_tuning_posttrained_model_biwig.ipynb`, `04_fine_tuning_pretrained_model_annotation.ipynb`.
+- Reproducible local execution entrypoint is `case-study-playbooks/fine-tuning/run_fine_tuning_case.sh`.
+- `prep` mode produces planning artifacts only.
+- `train` mode performs full CSV binary-classification training through `scripts/train_csv_binary_classification.py`.
 
 Preflight order (do not skip):
 
 1. Confirm `HF_TOKEN` and gated model access.
-2. Confirm notebook dependencies (`pyfaidx`, `pyBigWig`, `torchmetrics`, `transformers`, `torch`) in the active runtime.
-3. Confirm data schema and head type (`bigwig` vs `annotation`) before writing training code.
-4. Confirm sequence length divisibility with `2 ** num_downsamples` and center-crop behavior.
-5. Confirm hardware constraints (GPU memory, mixed precision strategy, batch/accumulation plan).
+2. Confirm runtime dependencies (`pyfaidx`, `pyBigWig`, `torchmetrics`, `transformers`, `torch`) in `conda run -n ntv3`.
+3. Confirm data schema (`sequence,label`) and intended objective.
+4. Confirm sequence length divisibility with `2 ** num_downsamples`.
+5. Confirm execution device policy:
+   - train mode is CPU-only in this playbook
+   - MPS is fail-fast (unsupported)
 
 Execution guidance:
 
-- For pretrained bigwig fine-tuning, follow notebook `02_*` patterns (Poisson-style track loss + correlation metrics).
-- For posttrained bigwig fine-tuning, follow notebook `03_*` patterns with species conditioning.
-- For pretrained annotation fine-tuning, follow notebook `04_*` patterns (classification/focal-loss style setup).
-- When users ask for "train command", provide a reproducible notebook-to-script template and label any placeholders clearly.
+- Prep mode:
+  - `bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh --skills ntv3 --ntv3-mode prep --data-dir case-study-playbooks/fine-tuning/data`
+- Train mode:
+  - `FINE_TUNING_NTV3_DEVICE=cpu bash case-study-playbooks/fine-tuning/run_fine_tuning_case.sh --skills ntv3 --ntv3-mode train --data-dir case-study-playbooks/fine-tuning/data`
 
 Expected outputs to surface in responses:
 
-- resolved training config summary (model, species, sequence length, divisor, head type)
-- training/eval metric artifact paths
-- best-checkpoint path or explicit "not executed" status if only planning is requested
+- prep mode:
+  - `train-command.sh`
+  - `eval-metrics.json` (`status=not_executed`)
+- train mode:
+  - `eval-metrics.json`
+  - `training_history.json`
+  - `model_output/best_checkpoint.pt`
+  - `train.log`
 
-## Case-Study/NTv3 Execution Flow
+## Case-Study Fine-Tuning Execution Flow
 
-Use this section when the user asks for reproducible NTv3 execution under `case-study/ntv3`.
+Use this section when the user asks for reproducible NTv3 fine-tuning under `case-study-playbooks/fine-tuning`.
 
 Recommended order:
 
-1. Run embedding workflow:
-   - `bash case-study/ntv3/run_ntv3_embedding.sh`
-2. Run fine-tuning prep workflow:
-   - `bash case-study/ntv3/run_ntv3_finetuning_prep.sh`
-3. Run combined workflow:
-   - `bash case-study/ntv3/run_ntv3_case_study.sh`
-   - This orchestrates embedding + prep together and writes `case_study_summary.json`.
+1. Run prep mode first to validate schema and context-length assumptions.
+2. Run train mode only after prep artifacts are valid and compute constraints are explicit.
 
 Preflight checklist:
 
 1. `HF_TOKEN` is set and gated NTv3 model access is available.
-2. Runtime is available (`conda run -n ntv3` preferred, otherwise local python).
+2. Runtime is available (`conda run -n ntv3`).
 3. Input lengths are validated with `scripts/check_valid_length.py`.
-4. Fine-tuning boundary is explicit: prep outputs are expected, full training is not executed in this flow.
+4. Mode is explicit (`prep` or `train`).
 
 Flow-level acceptance checkpoints (process-oriented):
 
-- embedding output files exist in `case-study/ntv3/output` (`*_trackplot.png`, `*_result.json`)
-- fine-tuning prep output files exist in `case-study/ntv3/output` (`fine_tuning_plan.json`, `train-command.sh`, `eval-metrics.json`, `prep_report.json`)
-- `eval-metrics.json` contains `status=not_executed` for prep-only flows
-- `eval-metrics.json` contains `selected_skill` and `planned_train_command`
+- prep mode artifacts exist under `<run_root>/ntv3_results`:
+  - `fine_tuning_plan.json`
+  - `train-command.sh`
+  - `eval-metrics.json`
+  - `prep_report.json`
+- train mode artifacts exist under `<run_root>/ntv3_results`:
+  - `eval-metrics.json`
+  - `training_history.json`
+  - `model_output/best_checkpoint.pt`
+  - `train.log`
 - Do not treat one specific run's tensor shape values as hard assertions in this workflow section.
 
 ## Grounded API Surface
